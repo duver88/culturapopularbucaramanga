@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
+
+class Survey extends Model
+{
+    protected $fillable = [
+        'title',
+        'description',
+        'banner',
+        'slug',
+        'is_active',
+        'published_at',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'published_at' => 'datetime',
+    ];
+
+    // Generar slug automáticamente
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($survey) {
+            if (empty($survey->slug)) {
+                $survey->slug = Str::slug($survey->title) . '-' . Str::random(6);
+            }
+        });
+    }
+
+    // Relaciones
+    public function questions()
+    {
+        return $this->hasMany(Question::class)->orderBy('order');
+    }
+
+    public function votes()
+    {
+        return $this->hasMany(Vote::class);
+    }
+
+    // Métodos útiles
+    public function getTotalVotesAttribute()
+    {
+        return $this->votes()->distinct('ip_address')->count();
+    }
+}
