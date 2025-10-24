@@ -17,11 +17,15 @@
     <meta property="og:image" content="@yield('og_image_full', url('images/default-survey-preview.jpg'))">
     <meta property="og:image:secure_url" content="@yield('og_image_full', url('images/default-survey-preview.jpg'))">
     <meta property="og:image:type" content="image/jpeg">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
+    <meta property="og:image:width" content="@yield('og_image_width', '1200')">
+    <meta property="og:image:height" content="@yield('og_image_height', '630')">
     <meta property="og:image:alt" content="@yield('og_title', 'Sistema de Encuestas')">
     <meta property="og:locale" content="es_CO">
-    <meta property="og:site_name" content="Sistema de Encuestas">
+    <meta property="og:site_name" content="Cultura Popular Bucaramanga">
+
+    <!-- Metadatos adicionales para mejor presentación -->
+    <meta property="fb:app_id" content="">
+    <link rel="canonical" href="{{ url()->current() }}">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">

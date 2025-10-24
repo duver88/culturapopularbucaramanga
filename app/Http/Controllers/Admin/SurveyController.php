@@ -70,6 +70,30 @@ class SurveyController extends Controller
                 $survey->update(['banner' => $path]);
             }
 
+            // Subir imagen Open Graph (Facebook) si existe
+            if ($request->hasFile('og_image')) {
+                $file = $request->file('og_image');
+
+                // Validación extra de seguridad
+                $extension = $file->getClientOriginalExtension();
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+                if (!in_array(strtolower($extension), $allowedExtensions)) {
+                    throw new \Exception('Tipo de archivo no permitido para imagen OG.');
+                }
+
+                // Verificar que sea realmente una imagen
+                $mimeType = $file->getMimeType();
+                $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+                if (!in_array($mimeType, $allowedMimes)) {
+                    throw new \Exception('El archivo de imagen OG no es válido.');
+                }
+
+                $path = $file->store('og-images', 'public');
+                $survey->update(['og_image' => $path]);
+            }
+
             // Crear preguntas y opciones
             foreach ($validated['questions'] as $index => $questionData) {
                 $question = $survey->questions()->create([
@@ -144,6 +168,7 @@ class SurveyController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'banner' => 'nullable|image|max:2048',
+            'og_image' => 'nullable|image|max:2048',
             'is_active' => 'boolean',
             'questions' => 'required|array|min:1',
             'questions.*.id' => 'nullable|exists:questions,id',
@@ -171,6 +196,15 @@ class SurveyController extends Controller
                 }
                 $path = $request->file('banner')->store('banners', 'public');
                 $survey->update(['banner' => $path]);
+            }
+
+            // Actualizar imagen Open Graph (Facebook) si existe
+            if ($request->hasFile('og_image')) {
+                if ($survey->og_image) {
+                    Storage::disk('public')->delete($survey->og_image);
+                }
+                $path = $request->file('og_image')->store('og-images', 'public');
+                $survey->update(['og_image' => $path]);
             }
 
             // IDs de preguntas que vienen en el request

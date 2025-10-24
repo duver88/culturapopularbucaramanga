@@ -11,6 +11,7 @@ class Survey extends Model
         'title',
         'description',
         'banner',
+        'og_image',
         'slug',
         'is_active',
         'published_at',

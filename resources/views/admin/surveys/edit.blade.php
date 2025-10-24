@@ -38,7 +38,7 @@
                 <!-- Banner -->
                 <div class="mb-4">
                     <label for="banner" class="form-label fw-semibold">
-                        <i class="bi bi-image"></i> Banner/Imagen
+                        <i class="bi bi-image"></i> Banner/Imagen de la Encuesta
                     </label>
                     @if($survey->banner)
                         <div class="mb-2">
@@ -48,7 +48,28 @@
                         </div>
                     @endif
                     <input type="file" class="form-control" name="banner" id="banner" accept="image/*">
-                    <small class="text-muted">Imagen opcional para mostrar en la encuesta</small>
+                    <small class="text-muted">Imagen que se muestra en la página de la encuesta</small>
+                </div>
+
+                <!-- Banner para Facebook/Open Graph -->
+                <div class="mb-4">
+                    <label for="og_image" class="form-label fw-semibold">
+                        <i class="bi bi-facebook"></i> Imagen para Facebook (Open Graph)
+                    </label>
+                    @if($survey->og_image)
+                        <div class="mb-2">
+                            <img src="{{ asset('storage/' . $survey->og_image) }}" alt="Imagen OG actual"
+                                 class="img-thumbnail" style="max-height: 150px;">
+                            <p class="small text-muted mt-1">Imagen actual para redes sociales (sube una nueva para reemplazarla)</p>
+                        </div>
+                    @endif
+                    <input type="file" class="form-control" name="og_image" id="og_image" accept="image/*">
+                    <div class="alert alert-info mt-2 py-2">
+                        <small>
+                            <i class="bi bi-info-circle"></i> <strong>Recomendado:</strong> 1200x630 píxeles para Facebook, WhatsApp y redes sociales.
+                            <br>Si no subes una imagen, se usará el banner principal.
+                        </small>
+                    </div>
                 </div>
 
                 <!-- Estado -->

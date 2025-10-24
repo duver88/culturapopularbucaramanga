@@ -4,7 +4,7 @@
 
 @section('meta_description', $survey->description ?? 'Participa en esta encuesta y comparte tu opinión')
 
-@section('og_image_full', url('images/default-survey-preview.jpg'))
+@section('og_image_full', $survey->og_image ? asset('storage/' . $survey->og_image) : ($survey->banner ? asset('storage/' . $survey->banner) : url('images/default-survey-preview.jpg')))
 
 @section('og_title', $survey->title)
 @section('og_description', $survey->description ?? 'Participa en esta encuesta y comparte tu opinión')
