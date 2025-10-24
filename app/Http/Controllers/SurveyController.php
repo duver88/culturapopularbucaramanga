@@ -35,6 +35,11 @@ class SurveyController extends Controller
             })
             ->exists();
 
+        // Si ya votó, redirigir a la página de agradecimiento con resultados
+        if ($hasVoted) {
+            return redirect()->route('surveys.thanks', $survey->slug);
+        }
+
         return view('surveys.show', compact('survey', 'hasVoted'));
     }
 
@@ -112,8 +117,53 @@ class SurveyController extends Controller
 
     public function thanks($slug)
     {
-        $survey = Survey::where('slug', $slug)->firstOrFail();
-        return view('surveys.thanks', compact('survey'));
+        $survey = Survey::where('slug', $slug)
+            ->with(['questions.options' => function($query) {
+                $query->withCount('votes');
+            }])
+            ->firstOrFail();
+
+        // Calcular estadísticas generales
+        $totalVotes = Vote::where('survey_id', $survey->id)
+            ->distinct('fingerprint')
+            ->count('fingerprint');
+
+        // Si no hay votos por fingerprint, contar por IP
+        if ($totalVotes == 0) {
+            $totalVotes = Vote::where('survey_id', $survey->id)
+                ->distinct('ip_address')
+                ->count('ip_address');
+        }
+
+        // Preparar datos para los gráficos
+        $statistics = [];
+        foreach ($survey->questions as $question) {
+            $questionStats = [
+                'question' => $question->question_text,
+                'type' => $question->question_type,
+                'options' => [],
+                'total_responses' => 0
+            ];
+
+            $totalQuestionVotes = $question->options->sum('votes_count');
+            $questionStats['total_responses'] = $totalQuestionVotes;
+
+            foreach ($question->options as $option) {
+                $percentage = $totalQuestionVotes > 0
+                    ? round(($option->votes_count / $totalQuestionVotes) * 100, 1)
+                    : 0;
+
+                $questionStats['options'][] = [
+                    'text' => $option->option_text,
+                    'votes' => $option->votes_count,
+                    'percentage' => $percentage
+                ];
+            }
+
+            $statistics[] = $questionStats;
+        }
+
+        return view('surveys.thanks', compact('survey', 'totalVotes', 'statistics'));
     }
 
     public function checkVote($slug)
@@ -135,3 +185,4 @@ class SurveyController extends Controller
         return response()->json(['has_voted' => $hasVoted]);
     }
 }
+

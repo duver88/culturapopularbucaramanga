@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 // Ruta principal - redirige al login
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect('/survey/encuesta-de-favorabilidad-alcaldia-de-bucaramanga-BU3aPT');
 });
 
 // Rutas de autenticación
@@ -34,3 +34,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/surveys/{survey}/publish', [AdminSurveyController::class, 'publish'])->name('surveys.publish');
     Route::post('/surveys/{survey}/unpublish', [AdminSurveyController::class, 'unpublish'])->name('surveys.unpublish');
 });
+

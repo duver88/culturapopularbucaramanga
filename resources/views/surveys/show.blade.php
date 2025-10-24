@@ -2,6 +2,13 @@
 
 @section('title', $survey->title)
 
+@section('meta_description', $survey->description ?? 'Participa en esta encuesta y comparte tu opinión')
+
+@section('og_image_full', url('images/default-survey-preview.jpg'))
+
+@section('og_title', $survey->title)
+@section('og_description', $survey->description ?? 'Participa en esta encuesta y comparte tu opinión')
+
 @section('content')
 <div class="min-vh-100 d-flex align-items-center position-relative" style="background: linear-gradient(135deg, #fff9e6 0%, #e6f2ff 50%, #ffe6e6 100%);">
     <!-- Efecto difuminado de fondo - Colores de Colombia -->
@@ -19,7 +26,11 @@
                 <div class="card border-0 rounded-4 overflow-hidden" style="backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.95); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);">
                     <!-- Banner -->
                     @if($survey->banner)
-                        <div class="card-img-top" style="height: 200px; background: url('{{ asset('storage/' . $survey->banner) }}') center/cover;">
+                        <div class="banner-wrapper-form">
+                            <img src="{{ asset('storage/' . $survey->banner) }}"
+                                 alt="Banner de {{ $survey->title }}"
+                                 class="w-100 banner-img-form"
+                                 style="display: block; height: auto; max-height: 400px; object-fit: contain; background: #f8f9fa;">
                         </div>
                     @else
                         <div class="card-img-top bg-gradient d-flex align-items-center justify-content-center"
@@ -79,7 +90,8 @@
 
                                                 @if($question->question_type === 'single_choice')
                                                     <!-- Radio buttons para selección única -->
-                                                    @foreach($question->options as $option)
+                                                    @foreach($question->options->shuffle() as $option)
+
                                                         <div class="form-check mb-3">
                                                             <input class="form-check-input" type="radio"
                                                                    name="answers[{{ $question->id }}]"
@@ -195,6 +207,23 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Estilos del banner del formulario */
+.banner-wrapper-form {
+    overflow: hidden;
+    background: #f8f9fa;
+    min-height: 200px;
+    max-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banner-img-form {
+    object-fit: contain !important;
+    width: 100%;
+    height: auto;
+}
+
 .form-check {
     transition: all 0.3s ease;
     padding: 0.75rem;
@@ -255,6 +284,16 @@ document.addEventListener('DOMContentLoaded', function() {
     .form-check-label {
         font-size: 0.95rem;
     }
+
+    /* Banner móvil */
+    .banner-wrapper-form {
+        min-height: 150px !important;
+        max-height: 250px !important;
+    }
+
+    .banner-img-form {
+        max-height: 250px !important;
+    }
 }
 
 @media (max-width: 576px) {
@@ -267,6 +306,17 @@ document.addEventListener('DOMContentLoaded', function() {
         height: 35px !important;
         font-size: 0.9rem;
     }
+
+    /* Banner extra pequeño */
+    .banner-wrapper-form {
+        min-height: 120px !important;
+        max-height: 200px !important;
+    }
+
+    .banner-img-form {
+        max-height: 200px !important;
+    }
 }
 </style>
 @endsection
+

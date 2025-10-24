@@ -41,7 +41,7 @@
                                 <i class="bi bi-envelope"></i> Correo Electrónico
                             </label>
                             <input type="email" class="form-control form-control-lg" id="email" name="email"
-                                   placeholder="admin@surveys.com" value="{{ old('email') }}" required>
+                                   placeholder="correo@correo" value="{{ old('email') }}" required>
                         </div>
 
                         <div class="mb-3">
@@ -67,13 +67,7 @@
                         </div>
                     </form>
 
-                    <div class="mt-4 p-3 bg-light rounded text-center">
-                        <p class="mb-2 fw-bold text-dark">
-                            <i class="bi bi-info-circle-fill text-primary"></i> Credenciales de Administrador
-                        </p>
-                        <p class="mb-1 small"><strong>Email:</strong> <code>admin@surveys.com</code></p>
-                        <p class="mb-0 small"><strong>Contraseña:</strong> <code>Admin@2025!SecureP4ss#Survey</code></p>
-                    </div>
+
                 </div>
             </div>
         </div>

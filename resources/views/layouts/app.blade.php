@@ -6,6 +6,30 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Sistema de Encuestas')</title>
 
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="@yield('meta_description', 'Sistema de Encuestas - Participa en nuestras encuestas')">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="@yield('og_title', 'Sistema de Encuestas')">
+    <meta property="og:description" content="@yield('og_description', 'Participa en esta encuesta y comparte tu opinión')">
+    <meta property="og:image" content="@yield('og_image_full', url('images/default-survey-preview.jpg'))">
+    <meta property="og:image:secure_url" content="@yield('og_image_full', url('images/default-survey-preview.jpg'))">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="@yield('og_title', 'Sistema de Encuestas')">
+    <meta property="og:locale" content="es_CO">
+    <meta property="og:site_name" content="Sistema de Encuestas">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="{{ url()->current() }}">
+    <meta property="twitter:title" content="@yield('og_title', 'Sistema de Encuestas')">
+    <meta property="twitter:description" content="@yield('og_description', 'Participa en esta encuesta y comparte tu opinión')">
+    <meta property="twitter:image" content="@yield('og_image', asset('images/default-survey-preview.jpg'))">
+
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link rel="alternate icon" href="{{ asset('favicon.ico') }}">
@@ -22,3 +46,4 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+

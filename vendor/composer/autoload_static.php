@@ -533,8 +533,19 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
     );
 
     public static $classMap = array (
+        'App\\Http\\Controllers\\Admin\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/DashboardController.php',
+        'App\\Http\\Controllers\\Admin\\SurveyController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/SurveyController.php',
+        'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
+        'App\\Http\\Controllers\\SurveyController' => __DIR__ . '/../..' . '/app/Http/Controllers/SurveyController.php',
+        'App\\Http\\Middleware\\AdminMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/AdminMiddleware.php',
+        'App\\Http\\Middleware\\PreventDuplicateVote' => __DIR__ . '/../..' . '/app/Http/Middleware/PreventDuplicateVote.php',
+        'App\\Http\\Middleware\\SecurityHeadersMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/SecurityHeadersMiddleware.php',
+        'App\\Models\\Question' => __DIR__ . '/../..' . '/app/Models/Question.php',
+        'App\\Models\\QuestionOption' => __DIR__ . '/../..' . '/app/Models/QuestionOption.php',
+        'App\\Models\\Survey' => __DIR__ . '/../..' . '/app/Models/Survey.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
+        'App\\Models\\Vote' => __DIR__ . '/../..' . '/app/Models/Vote.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
@@ -655,6 +666,7 @@ class ComposerStaticInitc514d8f7b9fc5970bdd94287905ef584
         'Cron\\MinutesField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/MinutesField.php',
         'Cron\\MonthField' => __DIR__ . '/..' . '/dragonmantank/cron-expression/src/Cron/MonthField.php',
         'Database\\Factories\\UserFactory' => __DIR__ . '/../..' . '/database/factories/UserFactory.php',
+        'Database\\Seeders\\AdminSeeder' => __DIR__ . '/../..' . '/database/seeders/AdminSeeder.php',
         'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',

@@ -6,8 +6,19 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'App\\Http\\Controllers\\Admin\\DashboardController' => $baseDir . '/app/Http/Controllers/Admin/DashboardController.php',
+    'App\\Http\\Controllers\\Admin\\SurveyController' => $baseDir . '/app/Http/Controllers/Admin/SurveyController.php',
+    'App\\Http\\Controllers\\AuthController' => $baseDir . '/app/Http/Controllers/AuthController.php',
     'App\\Http\\Controllers\\Controller' => $baseDir . '/app/Http/Controllers/Controller.php',
+    'App\\Http\\Controllers\\SurveyController' => $baseDir . '/app/Http/Controllers/SurveyController.php',
+    'App\\Http\\Middleware\\AdminMiddleware' => $baseDir . '/app/Http/Middleware/AdminMiddleware.php',
+    'App\\Http\\Middleware\\PreventDuplicateVote' => $baseDir . '/app/Http/Middleware/PreventDuplicateVote.php',
+    'App\\Http\\Middleware\\SecurityHeadersMiddleware' => $baseDir . '/app/Http/Middleware/SecurityHeadersMiddleware.php',
+    'App\\Models\\Question' => $baseDir . '/app/Models/Question.php',
+    'App\\Models\\QuestionOption' => $baseDir . '/app/Models/QuestionOption.php',
+    'App\\Models\\Survey' => $baseDir . '/app/Models/Survey.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
+    'App\\Models\\Vote' => $baseDir . '/app/Models/Vote.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',
@@ -128,6 +139,7 @@ return array(
     'Cron\\MinutesField' => $vendorDir . '/dragonmantank/cron-expression/src/Cron/MinutesField.php',
     'Cron\\MonthField' => $vendorDir . '/dragonmantank/cron-expression/src/Cron/MonthField.php',
     'Database\\Factories\\UserFactory' => $baseDir . '/database/factories/UserFactory.php',
+    'Database\\Seeders\\AdminSeeder' => $baseDir . '/database/seeders/AdminSeeder.php',
     'Database\\Seeders\\DatabaseSeeder' => $baseDir . '/database/seeders/DatabaseSeeder.php',
     'DateError' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
     'DateException' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
