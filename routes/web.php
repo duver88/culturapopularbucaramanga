@@ -22,7 +22,7 @@ Route::post('/survey/{slug}/vote', [SurveyController::class, 'vote'])
     ->middleware('prevent.duplicate.vote')
     ->name('surveys.vote');
 Route::get('/survey/{slug}/thanks', [SurveyController::class, 'thanks'])->name('surveys.thanks');
-Route::get('/survey/{slug}/check-vote', [SurveyController::class, 'checkVote'])->name('surveys.check-vote');
+Route::match(['get', 'post'], '/survey/{slug}/check-vote', [SurveyController::class, 'checkVote'])->name('surveys.check-vote');
 
 // Rutas del administrador (protegidas)
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
@@ -33,5 +33,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('surveys', AdminSurveyController::class);
     Route::post('/surveys/{survey}/publish', [AdminSurveyController::class, 'publish'])->name('surveys.publish');
     Route::post('/surveys/{survey}/unpublish', [AdminSurveyController::class, 'unpublish'])->name('surveys.unpublish');
+    Route::delete('/surveys/{survey}/reset', [AdminSurveyController::class, 'reset'])->name('surveys.reset');
 });
 

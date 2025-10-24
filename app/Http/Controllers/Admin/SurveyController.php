@@ -267,4 +267,26 @@ class SurveyController extends Controller
 
         return back()->with('success', 'Encuesta despublicada exitosamente.');
     }
+
+    public function reset(Survey $survey)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Contar votos antes de eliminar (para el mensaje)
+            $totalVotes = Vote::where('survey_id', $survey->id)->count();
+
+            // Eliminar todos los votos de esta encuesta
+            Vote::where('survey_id', $survey->id)->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.surveys.show', $survey)
+                ->with('success', "✅ Reset exitoso. Se eliminaron {$totalVotes} votos. La encuesta está lista para recibir nuevos votos.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al resetear la encuesta: ' . $e->getMessage());
+        }
+    }
 }

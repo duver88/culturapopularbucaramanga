@@ -19,6 +19,9 @@
                 <a href="{{ route('admin.surveys.edit', $survey) }}" class="btn btn-primary">
                     <i class="bi bi-pencil"></i> Editar
                 </a>
+                <button type="button" class="btn btn-danger" onclick="confirmReset()">
+                    <i class="bi bi-arrow-clockwise"></i> Reset Votos
+                </button>
                 <a href="{{ route('admin.surveys.index') }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Volver
                 </a>
@@ -132,11 +135,43 @@
     @endif
 </div>
 
+<!-- Formulario oculto para reset -->
+<form id="resetForm" method="POST" action="{{ route('admin.surveys.reset', $survey) }}" style="display: none;">
+    @csrf
+    @method('DELETE')
+</form>
+
 <script>
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(function() {
         alert('¡Link copiado al portapapeles!');
     });
+}
+
+function confirmReset() {
+    const totalVotes = {{ $totalVotes }};
+    const uniqueVoters = {{ $uniqueVoters }};
+
+    if (confirm(`⚠️ ADVERTENCIA: Esta acción es IRREVERSIBLE\n\n` +
+                `Se eliminarán:\n` +
+                `• ${totalVotes} votos totales\n` +
+                `• ${uniqueVoters} votantes únicos\n` +
+                `• Todos los resultados de esta encuesta\n\n` +
+                `¿Estás SEGURO de que deseas continuar?`)) {
+
+        // Segunda confirmación
+        if (confirm(`🔴 ÚLTIMA CONFIRMACIÓN\n\n` +
+                    `Escribe "RESET" en la próxima ventana para confirmar`)) {
+
+            const confirmation = prompt('Escribe "RESET" para confirmar (en mayúsculas):');
+
+            if (confirmation === 'RESET') {
+                document.getElementById('resetForm').submit();
+            } else {
+                alert('❌ Operación cancelada. El texto no coincide.');
+            }
+        }
+    }
 }
 </script>
 @endsection

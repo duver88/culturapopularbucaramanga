@@ -74,6 +74,12 @@
                                 @csrf
                                 <input type="hidden" name="fingerprint" id="fingerprint">
 
+                                <!-- Datos del dispositivo para detección inteligente de fraude -->
+                                <input type="hidden" name="device_data[user_agent]" id="device_user_agent">
+                                <input type="hidden" name="device_data[platform]" id="device_platform">
+                                <input type="hidden" name="device_data[screen_resolution]" id="device_resolution">
+                                <input type="hidden" name="device_data[hardware_concurrency]" id="device_cpu">
+
                                 <!-- Honeypot fields - campos trampa para bots (invisibles) -->
                                 <input type="text" name="website" id="website" style="position:absolute;left:-9999px;width:1px;height:1px;" tabindex="-1" autocomplete="off">
                                 <input type="text" name="url_field" id="url_field" style="position:absolute;left:-9999px;width:1px;height:1px;" tabindex="-1" autocomplete="off">
@@ -163,44 +169,263 @@
 </div>
 
 <script>
-// Generar fingerprint único para el navegador
+// ============================================
+// SISTEMA AVANZADO DE FINGERPRINTING
+// ============================================
+
+// 1. Canvas Fingerprinting
+function getCanvasFingerprint() {
+    try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 200;
+        canvas.height = 50;
+
+        // Dibujar texto con diferentes fuentes y tamaños
+        ctx.textBaseline = 'top';
+        ctx.font = '14px "Arial"';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('Survey Fingerprint 🎨', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('Canvas FP', 4, 17);
+
+        return canvas.toDataURL();
+    } catch (e) {
+        return 'canvas-not-supported';
+    }
+}
+
+// 2. WebGL Fingerprinting
+function getWebGLFingerprint() {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+
+        if (!gl) return 'webgl-not-supported';
+
+        const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+        return JSON.stringify({
+            vendor: gl.getParameter(gl.VENDOR),
+            renderer: gl.getParameter(gl.RENDERER),
+            version: gl.getParameter(gl.VERSION),
+            shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+            unmaskedVendor: debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : 'unknown',
+            unmaskedRenderer: debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'unknown'
+        });
+    } catch (e) {
+        return 'webgl-error';
+    }
+}
+
+// 3. Detectar fuentes instaladas
+function getFontsFingerprint() {
+    const baseFonts = ['monospace', 'sans-serif', 'serif'];
+    const testFonts = [
+        'Arial', 'Verdana', 'Times New Roman', 'Courier New', 'Georgia',
+        'Palatino', 'Garamond', 'Bookman', 'Comic Sans MS', 'Trebuchet MS',
+        'Impact', 'Lucida Sans', 'Tahoma', 'Calibri', 'Cambria',
+        'Segoe UI', 'Helvetica', 'Geneva', 'Monaco', 'Consolas'
+    ];
+
+    const testString = 'mmmmmmmmmmlli';
+    const testSize = '72px';
+    const h = document.getElementsByTagName('body')[0];
+
+    const s = document.createElement('span');
+    s.style.fontSize = testSize;
+    s.innerHTML = testString;
+    const defaultWidth = {};
+    const defaultHeight = {};
+
+    for (const baseFont of baseFonts) {
+        s.style.fontFamily = baseFont;
+        h.appendChild(s);
+        defaultWidth[baseFont] = s.offsetWidth;
+        defaultHeight[baseFont] = s.offsetHeight;
+        h.removeChild(s);
+    }
+
+    const detected = [];
+    for (const font of testFonts) {
+        let detected_font = false;
+        for (const baseFont of baseFonts) {
+            s.style.fontFamily = font + ',' + baseFont;
+            h.appendChild(s);
+            const matched = (s.offsetWidth !== defaultWidth[baseFont] || s.offsetHeight !== defaultHeight[baseFont]);
+            h.removeChild(s);
+            if (matched) {
+                detected_font = true;
+                break;
+            }
+        }
+        if (detected_font) {
+            detected.push(font);
+        }
+    }
+
+    return detected.join(',');
+}
+
+// 4. Detectar plugins del navegador
+function getPluginsFingerprint() {
+    try {
+        const plugins = [];
+        for (let i = 0; i < navigator.plugins.length; i++) {
+            const plugin = navigator.plugins[i];
+            plugins.push(plugin.name + '::' + plugin.description);
+        }
+        return plugins.join('|');
+    } catch (e) {
+        return 'plugins-not-available';
+    }
+}
+
+// 5. Información avanzada de hardware
+function getHardwareFingerprint() {
+    const nav = window.navigator;
+    return JSON.stringify({
+        cpuCores: nav.hardwareConcurrency || 'unknown',
+        deviceMemory: nav.deviceMemory || 'unknown', // GB de RAM
+        platform: nav.platform,
+        oscpu: nav.oscpu || 'unknown',
+        vendor: nav.vendor || 'unknown',
+        maxTouchPoints: nav.maxTouchPoints || 0
+    });
+}
+
+// 6. Audio Fingerprinting
+function getAudioFingerprint() {
+    try {
+        const audioContext = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+        if (!audioContext) return 'audio-not-supported';
+
+        const context = new audioContext(1, 44100, 44100);
+        const oscillator = context.createOscillator();
+        oscillator.type = 'triangle';
+        oscillator.frequency.value = 10000;
+
+        const compressor = context.createDynamicsCompressor();
+        oscillator.connect(compressor);
+        compressor.connect(context.destination);
+        oscillator.start(0);
+        context.startRendering();
+
+        return 'audio-context-created';
+    } catch (e) {
+        return 'audio-error';
+    }
+}
+
+// Generar fingerprint avanzado único
 function generateFingerprint() {
     // Verificar si ya existe en localStorage
     let fingerprint = localStorage.getItem('survey_fingerprint');
 
     if (!fingerprint) {
-        // Generar nuevo fingerprint basado en características del navegador
         const nav = window.navigator;
         const screen = window.screen;
-        const data = [
+
+        // Recopilar TODOS los datos del dispositivo
+        const basicData = [
             nav.userAgent,
             nav.language,
+            nav.languages ? nav.languages.join(',') : '',
+            nav.platform,
+            nav.hardwareConcurrency || 'unknown',
             screen.colorDepth,
             screen.width + 'x' + screen.height,
+            screen.availWidth + 'x' + screen.availHeight,
+            screen.pixelDepth,
             new Date().getTimezoneOffset(),
             !!window.sessionStorage,
-            !!window.localStorage
+            !!window.localStorage,
+            !!window.indexedDB,
+            typeof(window.openDatabase) !== 'undefined',
+            nav.cookieEnabled,
+            nav.doNotTrack || 'unknown',
+            nav.maxTouchPoints || 0,
+            window.devicePixelRatio || 1
         ].join('|');
 
-        // Generar hash simple
-        let hash = 0;
-        for (let i = 0; i < data.length; i++) {
-            const char = data.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash;
-        }
+        // Datos avanzados
+        const canvasHash = hashString(getCanvasFingerprint());
+        const webglHash = hashString(getWebGLFingerprint());
+        const fontsHash = hashString(getFontsFingerprint());
+        const pluginsHash = hashString(getPluginsFingerprint());
+        const hardwareHash = hashString(getHardwareFingerprint());
+        const audioHash = hashString(getAudioFingerprint());
 
-        fingerprint = 'fp_' + Math.abs(hash).toString(36) + '_' + Date.now().toString(36);
+        // Combinar todos los datos
+        const combinedData = basicData + '|' + canvasHash + '|' + webglHash + '|' +
+                           fontsHash + '|' + pluginsHash + '|' + hardwareHash + '|' + audioHash;
+
+        // Generar hash final
+        const finalHash = hashString(combinedData);
+        fingerprint = 'fp_' + finalHash + '_' + Date.now().toString(36);
+
         localStorage.setItem('survey_fingerprint', fingerprint);
     }
 
     return fingerprint;
 }
 
-// Establecer fingerprint al cargar la página
+// Función auxiliar para generar hash de strings
+function hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36);
+}
+
+// Verificar si ya votó y redirigir
+async function checkIfAlreadyVoted(fingerprint) {
+    try {
+        const response = await fetch('{{ route('surveys.check-vote', $survey->slug) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ fingerprint: fingerprint })
+        });
+
+        const data = await response.json();
+
+        if (data.has_voted) {
+            // Redirigir a la página de resultados
+            window.location.href = '{{ route('surveys.thanks', $survey->slug) }}';
+        }
+    } catch (error) {
+        console.error('Error verificando voto:', error);
+    }
+}
+
+// Establecer fingerprint y datos del dispositivo al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     const fingerprint = generateFingerprint();
-    document.getElementById('fingerprint').value = fingerprint;
+    const fingerprintInput = document.getElementById('fingerprint');
+
+    if (fingerprintInput) {
+        fingerprintInput.value = fingerprint;
+
+        // Guardar datos del dispositivo para detección inteligente
+        const nav = window.navigator;
+        const screen = window.screen;
+
+        document.getElementById('device_user_agent').value = nav.userAgent || '';
+        document.getElementById('device_platform').value = nav.platform || '';
+        document.getElementById('device_resolution').value = screen.width + 'x' + screen.height;
+        document.getElementById('device_cpu').value = nav.hardwareConcurrency || 0;
+
+        // Verificar si ya votó y redirigir automáticamente
+        checkIfAlreadyVoted(fingerprint);
+    }
 
     // Animación suave al hacer scroll a preguntas
     const formChecks = document.querySelectorAll('.form-check-input');

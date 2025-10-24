@@ -54,6 +54,11 @@ class SurveyController extends Controller
             'answers' => 'required|array|min:1|max:50',
             'answers.*' => 'required|exists:question_options,id',
             'fingerprint' => 'required|string|max:100',
+            'device_data' => 'nullable|array',
+            'device_data.user_agent' => 'nullable|string|max:500',
+            'device_data.platform' => 'nullable|string|max:100',
+            'device_data.screen_resolution' => 'nullable|string|max:50',
+            'device_data.hardware_concurrency' => 'nullable|integer',
         ]);
 
         // Validar que las respuestas correspondan a preguntas de esta encuesta
@@ -72,14 +77,65 @@ class SurveyController extends Controller
 
         $ipAddress = $request->ip();
         $fingerprint = $request->input('fingerprint') ?? Str::random(40);
+        $deviceData = $request->input('device_data', []);
 
-        // Verificar nuevamente si ya votó solo por fingerprint (permitir múltiples usuarios en la misma red)
-        $hasVoted = Vote::where('survey_id', $survey->id)
+        // SISTEMA INTELIGENTE DE DETECCIÓN DE FRAUDE
+
+        // 1. Verificar por fingerprint exacto (mismo navegador)
+        $exactMatch = Vote::where('survey_id', $survey->id)
             ->where('fingerprint', $fingerprint)
             ->exists();
 
-        if ($hasVoted) {
+        if ($exactMatch) {
             return back()->with('error', 'Ya has votado en esta encuesta.');
+        }
+
+        // 2. Verificar dispositivos similares con la misma IP (posible fraude)
+        $votesFromSameIP = Vote::where('survey_id', $survey->id)
+            ->where('ip_address', $ipAddress)
+            ->get();
+
+        if ($votesFromSameIP->isNotEmpty()) {
+            $suspiciousScore = 0;
+            $currentUserAgent = $deviceData['user_agent'] ?? '';
+            $currentPlatform = $deviceData['platform'] ?? '';
+            $currentResolution = $deviceData['screen_resolution'] ?? '';
+            $currentCPU = $deviceData['hardware_concurrency'] ?? 0;
+
+            foreach ($votesFromSameIP as $vote) {
+                // Calcular similitud del dispositivo
+                $similarity = 0;
+
+                // User agent similar (mismo navegador base)
+                if ($vote->user_agent && $currentUserAgent) {
+                    similar_text($vote->user_agent, $currentUserAgent, $percent);
+                    if ($percent > 80) $similarity += 40; // Muy sospechoso
+                    elseif ($percent > 60) $similarity += 20;
+                }
+
+                // Misma plataforma
+                if ($vote->platform == $currentPlatform) {
+                    $similarity += 20;
+                }
+
+                // Misma resolución de pantalla
+                if ($vote->screen_resolution == $currentResolution) {
+                    $similarity += 25;
+                }
+
+                // Mismo número de núcleos CPU
+                if ($vote->hardware_concurrency == $currentCPU && $currentCPU > 0) {
+                    $similarity += 15;
+                }
+
+                $suspiciousScore = max($suspiciousScore, $similarity);
+            }
+
+            // Si el puntaje de sospecha es alto (>70%), bloquear
+            // Esto bloquea intentos obvios de fraude pero permite diferentes dispositivos
+            if ($suspiciousScore > 70) {
+                return back()->with('error', 'Se ha detectado un posible intento de voto duplicado. Si crees que esto es un error, por favor contacta al administrador.');
+            }
         }
 
         try {
@@ -92,6 +148,10 @@ class SurveyController extends Controller
                     'question_option_id' => $optionId,
                     'ip_address' => $ipAddress,
                     'fingerprint' => $fingerprint,
+                    'user_agent' => $deviceData['user_agent'] ?? null,
+                    'platform' => $deviceData['platform'] ?? null,
+                    'screen_resolution' => $deviceData['screen_resolution'] ?? null,
+                    'hardware_concurrency' => $deviceData['hardware_concurrency'] ?? null,
                 ]);
             }
 
