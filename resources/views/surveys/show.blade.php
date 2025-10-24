@@ -91,7 +91,12 @@
                                                 @if($question->question_type === 'single_choice')
                                                     <!-- Radio buttons para selección única -->
                                                     @foreach($question->options->shuffle() as $option)
-
+                                                        <style>
+                                                            #option{{ $option->id }}:checked {
+                                                                background-color: {{ $option->color ?? '#0d6efd' }};
+                                                                border-color: {{ $option->color ?? '#0d6efd' }};
+                                                            }
+                                                        </style>
                                                         <div class="form-check mb-3">
                                                             <input class="form-check-input" type="radio"
                                                                    name="answers[{{ $question->id }}]"
@@ -106,6 +111,12 @@
                                                 @else
                                                     <!-- Checkboxes para selección múltiple -->
                                                     @foreach($question->options as $option)
+                                                        <style>
+                                                            #option{{ $option->id }}:checked {
+                                                                background-color: {{ $option->color ?? '#0d6efd' }};
+                                                                border-color: {{ $option->color ?? '#0d6efd' }};
+                                                            }
+                                                        </style>
                                                         <div class="form-check mb-3">
                                                             <input class="form-check-input" type="checkbox"
                                                                    name="answers[{{ $question->id }}][]"
@@ -240,11 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 1.25rem;
     margin-top: 0.15rem;
     cursor: pointer;
-}
-
-.form-check-input:checked {
-    background: linear-gradient(135deg, #003893 0%, #CE1126 100%);
-    border-color: #003893;
 }
 
 .form-check-label {

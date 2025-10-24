@@ -10,6 +10,7 @@ class QuestionOption extends Model
         'question_id',
         'option_text',
         'order',
+        'color',
     ];
 
     // Relaciones

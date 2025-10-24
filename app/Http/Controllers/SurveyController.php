@@ -22,18 +22,15 @@ class SurveyController extends Controller
             return view('surveys.inactive', compact('survey'));
         }
 
-        // Verificar si ya votó
-        $ipAddress = request()->ip();
+        // Verificar si ya votó (solo por fingerprint para permitir múltiples usuarios en la misma red)
         $fingerprint = request()->cookie('survey_fingerprint');
 
-        $hasVoted = Vote::where('survey_id', $survey->id)
-            ->where(function ($query) use ($ipAddress, $fingerprint) {
-                $query->where('ip_address', $ipAddress);
-                if ($fingerprint) {
-                    $query->orWhere('fingerprint', $fingerprint);
-                }
-            })
-            ->exists();
+        $hasVoted = false;
+        if ($fingerprint) {
+            $hasVoted = Vote::where('survey_id', $survey->id)
+                ->where('fingerprint', $fingerprint)
+                ->exists();
+        }
 
         // Si ya votó, redirigir a la página de agradecimiento con resultados
         if ($hasVoted) {
@@ -76,12 +73,9 @@ class SurveyController extends Controller
         $ipAddress = $request->ip();
         $fingerprint = $request->input('fingerprint') ?? Str::random(40);
 
-        // Verificar nuevamente si ya votó (por si pasó el middleware)
+        // Verificar nuevamente si ya votó solo por fingerprint (permitir múltiples usuarios en la misma red)
         $hasVoted = Vote::where('survey_id', $survey->id)
-            ->where(function ($query) use ($ipAddress, $fingerprint) {
-                $query->where('ip_address', $ipAddress)
-                    ->orWhere('fingerprint', $fingerprint);
-            })
+            ->where('fingerprint', $fingerprint)
             ->exists();
 
         if ($hasVoted) {
@@ -156,7 +150,8 @@ class SurveyController extends Controller
                 $questionStats['options'][] = [
                     'text' => $option->option_text,
                     'votes' => $option->votes_count,
-                    'percentage' => $percentage
+                    'percentage' => $percentage,
+                    'color' => $option->color ?? null
                 ];
             }
 
@@ -170,17 +165,14 @@ class SurveyController extends Controller
     {
         $survey = Survey::where('slug', $slug)->where('is_active', true)->firstOrFail();
 
-        $ipAddress = request()->ip();
         $fingerprint = request()->input('fingerprint');
 
-        $hasVoted = Vote::where('survey_id', $survey->id)
-            ->where(function ($query) use ($ipAddress, $fingerprint) {
-                $query->where('ip_address', $ipAddress);
-                if ($fingerprint) {
-                    $query->orWhere('fingerprint', $fingerprint);
-                }
-            })
-            ->exists();
+        $hasVoted = false;
+        if ($fingerprint) {
+            $hasVoted = Vote::where('survey_id', $survey->id)
+                ->where('fingerprint', $fingerprint)
+                ->exists();
+        }
 
         return response()->json(['has_voted' => $hasVoted]);
     }

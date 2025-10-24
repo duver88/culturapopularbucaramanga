@@ -145,14 +145,20 @@ function addOption(questionIndex) {
     const optionIndex = optionCounters[questionIndex];
 
     const optionHtml = `
-        <div class="input-group mb-2 option-row" data-option="${optionIndex}">
-            <span class="input-group-text bg-light">${optionIndex + 1}</span>
-            <input type="text" name="questions[${questionIndex}][options][]" required
-                   placeholder="Texto de la opción"
-                   class="form-control">
-            <button type="button" onclick="removeOption(this)" class="btn btn-outline-danger">
-                <i class="bi bi-x"></i>
-            </button>
+        <div class="mb-2 option-row" data-option="${optionIndex}">
+            <div class="input-group">
+                <span class="input-group-text bg-light">${optionIndex + 1}</span>
+                <input type="text" name="questions[${questionIndex}][options][]" required
+                       placeholder="Texto de la opción"
+                       class="form-control">
+                <input type="color" name="questions[${questionIndex}][colors][]"
+                       class="form-control form-control-color"
+                       value="#${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')}"
+                       title="Elige un color para esta opción">
+                <button type="button" onclick="removeOption(this)" class="btn btn-outline-danger">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
         </div>
     `;
 

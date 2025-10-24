@@ -107,6 +107,10 @@
                                             <input type="text" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][option_text]"
                                                    value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.option_text', $option->option_text) }}"
                                                    required placeholder="Texto de la opción" class="form-control">
+                                            <input type="color" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][color]"
+                                                   class="form-control form-control-color"
+                                                   value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.color', $option->color ?? '#3b82f6') }}"
+                                                   title="Elige un color para esta opción">
                                         </div>
                                     @endforeach
                                 </div>

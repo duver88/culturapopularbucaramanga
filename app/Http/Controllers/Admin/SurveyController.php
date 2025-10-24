@@ -34,6 +34,8 @@ class SurveyController extends Controller
             'questions.*.question_type' => 'required|in:single_choice,multiple_choice',
             'questions.*.options' => 'required|array|min:2|max:20',
             'questions.*.options.*' => 'required|string|max:255',
+            'questions.*.colors' => 'required|array|min:2|max:20',
+            'questions.*.colors.*' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
         ]);
 
         try {
@@ -80,6 +82,7 @@ class SurveyController extends Controller
                     $question->options()->create([
                         'option_text' => $optionText,
                         'order' => $optionIndex,
+                        'color' => $questionData['colors'][$optionIndex] ?? null,
                     ]);
                 }
             }
@@ -149,6 +152,7 @@ class SurveyController extends Controller
             'questions.*.options' => 'required|array|min:2',
             'questions.*.options.*.id' => 'nullable|exists:question_options,id',
             'questions.*.options.*.option_text' => 'required|string',
+            'questions.*.options.*.color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
         ]);
 
         try {
@@ -205,11 +209,13 @@ class SurveyController extends Controller
                         $option->update([
                             'option_text' => $optionData['option_text'],
                             'order' => $optionIndex,
+                            'color' => $optionData['color'] ?? null,
                         ]);
                     } else {
                         $question->options()->create([
                             'option_text' => $optionData['option_text'],
                             'order' => $optionIndex,
+                            'color' => $optionData['color'] ?? null,
                         ]);
                     }
                 }

@@ -11,8 +11,8 @@
 
 @section('content')
 @php
-    // Paleta de colores primarios profesionales para votaciones
-    $colors = [
+    // Paleta de colores por defecto (fallback)
+    $defaultColors = [
         ['#1e40af', '#3b82f6'], // Azul profesional
         ['#047857', '#10b981'], // Verde profesional
         ['#374151', '#6b7280'], // Gris oscuro
@@ -21,18 +21,6 @@
         ['#065f46', '#059669'], // Verde oscuro
         ['#1f2937', '#4b5563'], // Negro/Gris
         ['#0e7490', '#0891b2'], // Teal profesional
-    ];
-
-    // Colores planos para el gráfico de pastel
-    $chartColors = [
-        '#2563eb', // Azul
-        '#10b981', // Verde
-        '#6b7280', // Gris
-        '#06b6d4', // Cyan
-        '#3b82f6', // Azul claro
-        '#059669', // Verde oscuro
-        '#4b5563', // Gris oscuro
-        '#0891b2', // Teal
     ];
 @endphp
 
@@ -128,20 +116,36 @@
                                     <div class="col-12 col-md-7">
                                         <div class="options-container">
                                     @foreach($stat['options'] as $optIndex => $option)
-                                        <div class="option-item mb-3 fade-in" style="animation-delay: {{ $optIndex * 0.1 }}s;">
+                                        @php
+                                            // Usar color personalizado o fallback a colores por defecto
+                                            $optionColor = $option['color'] ?? null;
+                                            $gradientStart = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0];
+                                            $gradientEnd = $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][1];
+
+                                            // Ajustar segundo color del gradiente (más claro)
+                                            if ($optionColor) {
+                                                // Crear versión más clara del color para el gradiente
+                                                $gradientEnd = $optionColor;
+                                            }
+                                        @endphp
+                                        <div class="option-item mb-3 fade-in p-2 rounded"
+                                             style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 4px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
                                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="fw-medium text-dark">{{ $option['text'] }}</span>
+                                                <span class="fw-medium text-dark">
+                                                    <span class="d-inline-block rounded-circle me-2" style="width: 12px; height: 12px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; vertical-align: middle;"></span>
+                                                    {{ $option['text'] }}
+                                                </span>
                                                 <span class="fw-bold text-dark" style="min-width: 60px; text-align: right; font-size: 1.1rem;">
                                                     <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
                                                 </span>
                                             </div>
 
-                                            <!-- Barra de progreso animada con gradiente -->
+                                            <!-- Barra de progreso animada con color personalizado -->
                                             <div class="progress shadow-sm" style="height: 30px; border-radius: 15px; background: rgba(0,0,0,0.05);">
                                                 <div class="progress-bar progress-bar-animated progress-bar-striped position-relative overflow-visible"
                                                      role="progressbar"
                                                      style="width: 0%;
-                                                            background: linear-gradient(90deg, {{ $colors[$optIndex % count($colors)][0] }} 0%, {{ $colors[$optIndex % count($colors)][1] }} 100%);
+                                                            background: linear-gradient(90deg, {{ $gradientStart }} 0%, {{ $gradientEnd }} 100%);
                                                             border-radius: 15px;
                                                             transition: width 1.5s ease-out {{ $optIndex * 0.2 }}s;"
                                                      data-width="{{ $option['percentage'] }}"
@@ -683,7 +687,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Crear gráficos de pastel para cada pregunta
     const chartData = @json($statistics);
-    const chartColors = @json($chartColors);
+
+    // Colores por defecto en caso de que no haya colores personalizados
+    const defaultChartColors = [
+        '#2563eb', '#10b981', '#6b7280', '#06b6d4',
+        '#3b82f6', '#059669', '#4b5563', '#0891b2'
+    ];
 
     chartData.forEach((question, index) => {
         const ctx = document.getElementById(`chart-${index}`);
@@ -691,7 +700,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const labels = question.options.map(opt => opt.text);
         const data = question.options.map(opt => opt.percentage);
-        const colors = question.options.map((opt, idx) => chartColors[idx % chartColors.length]);
+        // Usar colores personalizados o colores por defecto
+        const colors = question.options.map((opt, idx) =>
+            opt.color || defaultChartColors[idx % defaultChartColors.length]
+        );
 
         // Detectar si es móvil
         const isMobile = window.innerWidth <= 768;
