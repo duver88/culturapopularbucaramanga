@@ -15,6 +15,7 @@ class Survey extends Model
         'slug',
         'is_active',
         'published_at',
+        'views_count',
     ];
 
     protected $casts = [
@@ -49,5 +50,11 @@ class Survey extends Model
     public function getTotalVotesAttribute()
     {
         return $this->votes()->distinct('ip_address')->count();
+    }
+
+    // Incrementar contador de visitas
+    public function incrementViews()
+    {
+        $this->increment('views_count');
     }
 }

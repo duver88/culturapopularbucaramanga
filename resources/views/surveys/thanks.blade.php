@@ -96,24 +96,24 @@
                                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem;">
                                         {{ $index + 1 }}
                                     </span>
-                                    <div class="flex-grow-1">
+                                    {{-- <div class="flex-grow-1">
                                         <h5 class="fw-semibold text-dark mb-2">{{ $stat['question'] }}</h5>
                                         <small class="text-muted">
                                             <i class="bi bi-chat-left-text"></i> {{ $stat['total_responses'] }} respuestas
                                         </small>
-                                    </div>
+                                    </div> --}}
                                 </div>
 
                                 <div class="row">
-                                    <!-- Gráfico de pastel -->
-                                    <div class="col-12 col-md-5 mb-4 mb-md-0">
-                                        <div class="chart-container" style="position: relative; height: 280px;">
+                                    <!-- Gráfico de pastel - MÁS GRANDE EN WEB -->
+                                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
+                                        <div class="chart-container-web p-4 bg-white rounded-3 shadow-sm" style="position: relative; min-height: 400px;">
                                             <canvas id="chart-{{ $index }}"></canvas>
                                         </div>
                                     </div>
 
                                     <!-- Opciones con barras de progreso -->
-                                    <div class="col-12 col-md-7">
+                                    <div class="col-12 col-lg-6">
                                         <div class="options-container">
                                     @foreach($stat['options'] as $optIndex => $option)
                                         @php
@@ -130,12 +130,12 @@
                                         @endphp
                                         <div class="option-item mb-3 fade-in p-2 rounded"
                                              style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 4px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                                                 <span class="fw-medium text-dark">
                                                     <span class="d-inline-block rounded-circle me-2" style="width: 12px; height: 12px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; vertical-align: middle;"></span>
                                                     {{ $option['text'] }}
                                                 </span>
-                                                <span class="fw-bold text-dark" style="min-width: 60px; text-align: right; font-size: 1.1rem;">
+                                                <span class="fw-bold text-dark" style="min-width: 50px; text-align: right; font-size: 1.2rem;">
                                                     <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
                                                 </span>
                                             </div>
@@ -174,8 +174,7 @@
                                     <div>
                                         <h6 class="fw-bold mb-2">Tu privacidad es importante</h6>
                                         <p class="mb-0 small">
-                                            Tu voto es completamente anónimo. No almacenamos ningún dato personal.
-                                            Solo guardamos tu voto para prevenir duplicados.
+                                            Tu voto es completamente anónimo. No almacenamos ningún dato personal. 
                                         </p>
                                     </div>
                                 </div>
@@ -297,6 +296,22 @@
     }
 }
 
+/* Estadísticas de participación */
+.participation-stats {
+    animation: fadeIn 0.8s ease-out 0.3s both;
+}
+
+.stat-item {
+    transition: all 0.3s ease;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.stat-item:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
 /* Transiciones suaves para elementos */
 .results-section {
     animation: fadeInUp 0.7s ease-out 0.4s both;
@@ -358,23 +373,29 @@
     }
 }
 
-/* Estilos para el contenedor del gráfico */
-.chart-container {
+/* Estilos para el contenedor del gráfico - MEJORADO PARA WEB */
+.chart-container-web {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    transition: all 0.3s ease;
 }
 
-.chart-container canvas {
+.chart-container-web:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+}
+
+.chart-container-web canvas {
     max-width: 100%;
     height: auto !important;
 }
 
 /* Responsive para tablets */
 @media (max-width: 992px) {
-    .chart-container {
-        height: 300px !important;
+    .chart-container-web {
+        min-height: 350px !important;
+        padding: 1.5rem !important;
     }
 }
 
@@ -406,9 +427,36 @@
         font-size: 1rem !important;
     }
 
+    h4 {
+        font-size: 1.1rem !important;
+    }
+
     /* Ícono de éxito */
     .success-animation i {
         font-size: 3rem !important;
+    }
+
+    /* Estadísticas de participación en móvil */
+    .participation-stats {
+        padding: 1rem !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .stat-item {
+        padding: 0.5rem !important;
+    }
+
+    .stat-item i {
+        font-size: 1.2rem !important;
+    }
+
+    .stat-item h4 {
+        font-size: 1rem !important;
+        margin-top: 0.5rem !important;
+    }
+
+    .stat-item small {
+        font-size: 0.75rem !important;
     }
 
     /* Card principal */
@@ -459,20 +507,20 @@
     }
 
     /* Gráfico móvil - MÁS GRANDE */
-    .chart-container {
-        height: 320px !important;
+    .chart-container-web {
+        min-height: 320px !important;
         margin-bottom: 2rem !important;
-        padding: 10px !important;
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 10px;
+        padding: 1.5rem !important;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
     }
 
     /* En móvil, el gráfico ocupa el 100% del ancho */
-    .col-md-5 {
+    .col-lg-6 {
         order: 1;
     }
 
-    .col-md-7 {
+    .col-lg-6:last-child {
         order: 2;
     }
 
@@ -498,6 +546,17 @@
         min-width: auto !important;
         flex: 1 1 100%;
         text-align: left !important;
+    }
+
+    /* Badges en móvil */
+    .option-item .badge {
+        font-size: 0.75rem !important;
+        padding: 0.35rem 0.6rem !important;
+    }
+
+    .option-item .d-flex.gap-2 {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
     }
 
     /* Barras de progreso móvil */
@@ -685,13 +744,19 @@ document.addEventListener('DOMContentLoaded', function() {
         block.style.animationDelay = (0.4 + index * 0.2) + 's';
     });
 
-    // Crear gráficos de pastel para cada pregunta
+    // Crear gráficos de pastel para cada pregunta - MEJORADO PARA WEB
     const chartData = @json($statistics);
 
-    // Colores por defecto en caso de que no haya colores personalizados
+    // Colores vibrantes y profesionales para WEB
     const defaultChartColors = [
-        '#2563eb', '#10b981', '#6b7280', '#06b6d4',
-        '#3b82f6', '#059669', '#4b5563', '#0891b2'
+        '#3b82f6', // Azul vibrante
+        '#10b981', // Verde esmeralda
+        '#f59e0b', // Naranja dorado
+        '#ef4444', // Rojo coral
+        '#8b5cf6', // Púrpura
+        '#ec4899', // Rosa
+        '#06b6d4', // Cyan
+        '#84cc16', // Lima
     ];
 
     chartData.forEach((question, index) => {
@@ -700,63 +765,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const labels = question.options.map(opt => opt.text);
         const data = question.options.map(opt => opt.percentage);
-        // Usar colores personalizados o colores por defecto
+        // Usar colores personalizados o colores por defecto vibrantes
         const colors = question.options.map((opt, idx) =>
             opt.color || defaultChartColors[idx % defaultChartColors.length]
         );
 
-        // Detectar si es móvil
+        // Detectar si es móvil o desktop
         const isMobile = window.innerWidth <= 768;
         const isSmallMobile = window.innerWidth <= 576;
+        const isDesktop = window.innerWidth > 992;
 
         new Chart(ctx, {
-            type: 'pie',
+            type: 'doughnut', // Cambio a doughnut para verse más moderno
             data: {
                 labels: labels,
                 datasets: [{
                     data: data,
                     backgroundColor: colors,
                     borderColor: '#ffffff',
-                    borderWidth: isMobile ? 3 : 3,
-                    hoverOffset: isMobile ? 12 : 15
+                    borderWidth: isDesktop ? 4 : 3, // Bordes más gruesos en desktop
+                    hoverOffset: isDesktop ? 25 : 15, // Efecto hover más pronunciado en desktop
+                    hoverBorderWidth: isDesktop ? 5 : 3
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
+                layout: {
+                    padding: isDesktop ? 20 : 10
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
+                        align: 'start', // Alinear a la izquierda
                         labels: {
-                            padding: isMobile ? 12 : 15,
+                            padding: isDesktop ? 20 : 12,
                             font: {
-                                size: isSmallMobile ? 11 : (isMobile ? 13 : 12),
+                                size: isDesktop ? 14 : (isMobile ? 13 : 12),
                                 family: "'Inter', system-ui, -apple-system, sans-serif",
-                                weight: '500'
+                                weight: '600'
                             },
-                            color: '#374151',
+                            color: '#1f2937',
                             usePointStyle: true,
                             pointStyle: 'circle',
-                            boxWidth: isMobile ? 10 : 8,
-                            boxHeight: isMobile ? 10 : 8,
-                            // Truncar texto largo en móvil
+                            boxWidth: isDesktop ? 12 : 10,
+                            boxHeight: isDesktop ? 12 : 10,
+                            textAlign: 'left', // Texto alineado a la izquierda
+                            // Generar etiquetas personalizadas con solo porcentaje
                             generateLabels: function(chart) {
                                 const data = chart.data;
                                 if (data.labels.length && data.datasets.length) {
+                                    const dataset = data.datasets[0];
+                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+
                                     return data.labels.map((label, i) => {
                                         const meta = chart.getDatasetMeta(0);
                                         const style = meta.controller.getStyle(i);
+                                        const value = dataset.data[i];
+                                        const percentage = ((value / total) * 100).toFixed(1);
 
                                         // Truncar texto en móvil
                                         let displayLabel = label;
-                                        if (isSmallMobile && label.length > 25) {
+                                        if (isSmallMobile && label.length > 20) {
+                                            displayLabel = label.substring(0, 20) + '...';
+                                        } else if (isMobile && label.length > 25) {
                                             displayLabel = label.substring(0, 25) + '...';
-                                        } else if (isMobile && label.length > 30) {
-                                            displayLabel = label.substring(0, 30) + '...';
                                         }
 
+                                        // Solo mostrar nombre y porcentaje
                                         return {
-                                            text: displayLabel,
+                                            text: `${displayLabel}: ${percentage}%`,
                                             fillStyle: style.backgroundColor,
                                             strokeStyle: style.borderColor,
                                             lineWidth: style.borderWidth,
@@ -770,20 +848,36 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                        padding: isMobile ? 12 : 12,
+                        backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                        padding: isDesktop ? 16 : 12,
                         titleFont: {
-                            size: isMobile ? 14 : 14,
-                            weight: 'bold'
+                            size: isDesktop ? 16 : 14,
+                            weight: 'bold',
+                            family: "'Inter', system-ui, sans-serif"
                         },
                         bodyFont: {
-                            size: isMobile ? 13 : 13
+                            size: isDesktop ? 15 : 13,
+                            family: "'Inter', system-ui, sans-serif"
                         },
-                        cornerRadius: 8,
+                        cornerRadius: 12,
                         displayColors: true,
+                        boxWidth: isDesktop ? 15 : 12,
+                        boxHeight: isDesktop ? 15 : 12,
+                        boxPadding: 8,
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        borderWidth: 2,
                         callbacks: {
                             label: function(context) {
-                                return ' ' + context.label + ': ' + context.parsed.toFixed(1) + '%';
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                // Solo mostrar porcentaje en el tooltip
+                                return ` ${percentage}%`;
+                            },
+                            title: function(context) {
+                                // Mostrar el nombre completo en el título
+                                return context[0].label || '';
                             }
                         }
                     }
@@ -791,9 +885,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 animation: {
                     animateRotate: true,
                     animateScale: true,
-                    duration: isMobile ? 1000 : 1500,
-                    delay: 600 + (index * 200)
-                }
+                    duration: isDesktop ? 2000 : 1500, // Animación más lenta y suave en desktop
+                    delay: 400 + (index * 200),
+                    easing: 'easeInOutQuart' // Easing más suave
+                },
+                // Efecto 3D sutil
+                cutout: isDesktop ? '50%' : '45%', // Agujero del donut
+                radius: isDesktop ? '85%' : '80%',
             }
         });
     });

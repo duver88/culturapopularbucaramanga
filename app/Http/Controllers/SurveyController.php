@@ -17,6 +17,13 @@ class SurveyController extends Controller
             ->with('questions.options')
             ->firstOrFail();
 
+        // Incrementar contador de visitas usando sesión para evitar múltiples conteos
+        $sessionKey = 'survey_viewed_' . $survey->id;
+        if (!session()->has($sessionKey)) {
+            $survey->incrementViews();
+            session()->put($sessionKey, true);
+        }
+
         // Si la encuesta no está activa, mostrar mensaje
         if (!$survey->is_active) {
             return view('surveys.inactive', compact('survey'));
@@ -79,63 +86,83 @@ class SurveyController extends Controller
         $fingerprint = $request->input('fingerprint') ?? Str::random(40);
         $deviceData = $request->input('device_data', []);
 
-        // SISTEMA INTELIGENTE DE DETECCIÓN DE FRAUDE
+        // ===================================================================
+        // SISTEMA ULTRA-REFORZADO DE DETECCIÓN DE FRAUDE
+        // ===================================================================
 
-        // 1. Verificar por fingerprint exacto (mismo navegador)
+        // 1. VERIFICACIÓN POR FINGERPRINT EXACTO (Prioridad máxima)
         $exactMatch = Vote::where('survey_id', $survey->id)
             ->where('fingerprint', $fingerprint)
             ->exists();
 
         if ($exactMatch) {
-            return back()->with('error', 'Ya has votado en esta encuesta.');
+            return back()->with('error', 'Ya has votado en esta encuesta. Solo se permite un voto por dispositivo.');
         }
 
-        // 2. Verificar dispositivos similares con la misma IP (posible fraude)
+        // 2. VERIFICACIÓN POR IP + CARACTERÍSTICAS DEL DISPOSITIVO (Ultra estricto)
         $votesFromSameIP = Vote::where('survey_id', $survey->id)
             ->where('ip_address', $ipAddress)
             ->get();
 
         if ($votesFromSameIP->isNotEmpty()) {
-            $suspiciousScore = 0;
             $currentUserAgent = $deviceData['user_agent'] ?? '';
             $currentPlatform = $deviceData['platform'] ?? '';
             $currentResolution = $deviceData['screen_resolution'] ?? '';
             $currentCPU = $deviceData['hardware_concurrency'] ?? 0;
 
             foreach ($votesFromSameIP as $vote) {
-                // Calcular similitud del dispositivo
-                $similarity = 0;
+                $deviceSimilarity = 0;
 
-                // User agent similar (mismo navegador base)
+                // User agent similar (mismo navegador/versión)
                 if ($vote->user_agent && $currentUserAgent) {
                     similar_text($vote->user_agent, $currentUserAgent, $percent);
-                    if ($percent > 80) $similarity += 40; // Muy sospechoso
-                    elseif ($percent > 60) $similarity += 20;
+                    if ($percent > 95) $deviceSimilarity += 50; // Casi idéntico
+                    elseif ($percent > 85) $deviceSimilarity += 40; // Muy similar
+                    elseif ($percent > 70) $deviceSimilarity += 25; // Similar
                 }
 
-                // Misma plataforma
-                if ($vote->platform == $currentPlatform) {
-                    $similarity += 20;
+                // Misma plataforma (Windows, Mac, Linux, Android, iOS)
+                if ($vote->platform == $currentPlatform && !empty($currentPlatform)) {
+                    $deviceSimilarity += 20;
                 }
 
-                // Misma resolución de pantalla
-                if ($vote->screen_resolution == $currentResolution) {
-                    $similarity += 25;
+                // Misma resolución de pantalla (muy específico del dispositivo)
+                if ($vote->screen_resolution == $currentResolution && !empty($currentResolution)) {
+                    $deviceSimilarity += 25;
                 }
 
-                // Mismo número de núcleos CPU
+                // Mismo número de núcleos CPU (característico del procesador)
                 if ($vote->hardware_concurrency == $currentCPU && $currentCPU > 0) {
-                    $similarity += 15;
+                    $deviceSimilarity += 20;
                 }
 
-                $suspiciousScore = max($suspiciousScore, $similarity);
+                // CRITERIO MÁS ESTRICTO: Si el dispositivo es muy similar (>60%), BLOQUEAR
+                // Esto significa que aunque use incógnito o borre cookies, si las características
+                // del hardware son las mismas, se detecta como el mismo dispositivo
+                if ($deviceSimilarity > 60) {
+                    return back()->with('error',
+                        'Ya se ha registrado un voto desde este dispositivo. ' .
+                        'Solo se permite un voto por dispositivo, independientemente del navegador o modo de navegación utilizado. ' .
+                        'Si consideras que esto es un error, contacta al administrador.'
+                    );
+                }
             }
+        }
 
-            // Si el puntaje de sospecha es alto (>70%), bloquear
-            // Esto bloquea intentos obvios de fraude pero permite diferentes dispositivos
-            if ($suspiciousScore > 70) {
-                return back()->with('error', 'Se ha detectado un posible intento de voto duplicado. Si crees que esto es un error, por favor contacta al administrador.');
-            }
+        // 3. VERIFICACIÓN ADICIONAL: Bloqueo por características únicas del dispositivo
+        // Aunque tenga IP diferente, si el fingerprint tiene características muy específicas
+        $fingerprintPrefix = substr($fingerprint, 0, 20); // Primeros 20 caracteres del hash
+
+        $similarFingerprints = Vote::where('survey_id', $survey->id)
+            ->where('fingerprint', 'LIKE', $fingerprintPrefix . '%')
+            ->where('fingerprint', '!=', $fingerprint)
+            ->count();
+
+        if ($similarFingerprints > 0) {
+            return back()->with('error',
+                'Se ha detectado un patrón similar a un voto previo desde este dispositivo. ' .
+                'Por seguridad, no se permite votar nuevamente.'
+            );
         }
 
         try {
@@ -160,8 +187,12 @@ class SurveyController extends Controller
             $response = redirect()->route('surveys.thanks', $survey->slug)
                 ->with('success', '¡Gracias por tu participación!');
 
-            // Establecer cookie con fingerprint
-            return $response->cookie('survey_fingerprint', $fingerprint, 525600); // 1 año
+            // Establecer MÚLTIPLES cookies para máxima persistencia
+            return $response
+                ->cookie('survey_fingerprint', $fingerprint, 525600) // 1 año
+                ->cookie('device_fingerprint', $fingerprint, 525600) // 1 año
+                ->cookie('survey_' . $survey->id . '_voted', 'true', 525600) // Cookie específica de encuesta
+                ->cookie('survey_' . $survey->id . '_fp', $fingerprint, 525600); // Fingerprint por encuesta
 
         } catch (\Exception $e) {
             DB::rollBack();

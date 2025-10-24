@@ -319,11 +319,33 @@ function getAudioFingerprint() {
     }
 }
 
-// Generar fingerprint avanzado único
-function generateFingerprint() {
-    // Verificar si ya existe en localStorage
-    let fingerprint = localStorage.getItem('survey_fingerprint');
+// Función para leer cookies
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
 
+// Función para establecer cookies de larga duración
+function setCookie(name, value, days) {
+    const d = new Date();
+    d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = "expires=" + d.toUTCString();
+    document.cookie = name + "=" + value + ";" + expires + ";path=/;SameSite=Strict";
+}
+
+// Generar fingerprint avanzado único con TRIPLE PROTECCIÓN
+function generateFingerprint() {
+    // 1. Intentar recuperar de COOKIE (persiste incluso en incógnito si no se cierra)
+    let fingerprint = getCookie('device_fingerprint');
+
+    // 2. Si no hay en cookie, intentar desde localStorage
+    if (!fingerprint) {
+        fingerprint = localStorage.getItem('survey_fingerprint');
+    }
+
+    // 3. Si aún no hay fingerprint, generarlo desde cero
     if (!fingerprint) {
         const nav = window.navigator;
         const screen = window.screen;
@@ -365,9 +387,21 @@ function generateFingerprint() {
         // Generar hash final
         const finalHash = hashString(combinedData);
         fingerprint = 'fp_' + finalHash + '_' + Date.now().toString(36);
-
-        localStorage.setItem('survey_fingerprint', fingerprint);
     }
+
+    // GUARDAR EN TRIPLE UBICACIÓN para máxima persistencia
+    // 1. LocalStorage (se borra en incógnito al cerrar)
+    try {
+        localStorage.setItem('survey_fingerprint', fingerprint);
+    } catch (e) {
+        console.log('LocalStorage no disponible');
+    }
+
+    // 2. Cookie de 365 días (MUY PERSISTENTE - incluso sobrevive a limpiezas parciales)
+    setCookie('device_fingerprint', fingerprint, 365);
+
+    // 3. Cookie específica de esta encuesta
+    setCookie('survey_{{ $survey->id }}_fp', fingerprint, 365);
 
     return fingerprint;
 }
@@ -406,6 +440,21 @@ async function checkIfAlreadyVoted(fingerprint) {
     }
 }
 
+// Verificación del lado del cliente antes de enviar
+function validateBeforeSubmit(event) {
+    // Verificar si existe cookie específica de esta encuesta
+    const surveyVoteCookie = getCookie('survey_{{ $survey->id }}_voted');
+
+    if (surveyVoteCookie) {
+        event.preventDefault();
+        alert('Ya has votado en esta encuesta anteriormente. Solo se permite un voto por dispositivo.');
+        window.location.href = '{{ route('surveys.thanks', $survey->slug) }}';
+        return false;
+    }
+
+    return true;
+}
+
 // Establecer fingerprint y datos del dispositivo al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     const fingerprint = generateFingerprint();
@@ -425,6 +474,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Verificar si ya votó y redirigir automáticamente
         checkIfAlreadyVoted(fingerprint);
+
+        // Agregar validación al formulario
+        const voteForm = document.getElementById('voteForm');
+        if (voteForm) {
+            voteForm.addEventListener('submit', validateBeforeSubmit);
+        }
     }
 
     // Animación suave al hacer scroll a preguntas
