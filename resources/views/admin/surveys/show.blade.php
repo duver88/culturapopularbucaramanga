@@ -166,7 +166,11 @@ function confirmReset() {
             const confirmation = prompt('Escribe "RESET" para confirmar (en mayúsculas):');
 
             if (confirmation === 'RESET') {
-                document.getElementById('resetForm').submit();
+                // Asegurar que el formulario se envíe correctamente
+                const form = document.getElementById('resetForm');
+                // Verificar que el método sea POST
+                form.method = 'POST';
+                form.submit();
             } else {
                 alert('❌ Operación cancelada. El texto no coincide.');
             }
