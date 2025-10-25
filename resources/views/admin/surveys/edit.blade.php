@@ -121,28 +121,53 @@
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Opciones de Respuesta *</label>
-                                    @foreach($question->options as $oIndex => $option)
-                                        <div class="input-group mb-2">
-                                            <span class="input-group-text bg-light">{{ $oIndex + 1 }}</span>
-                                            <input type="hidden" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][id]" value="{{ $option->id }}">
-                                            <input type="text" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][option_text]"
-                                                   value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.option_text', $option->option_text) }}"
-                                                   required placeholder="Texto de la opción" class="form-control">
-                                            <input type="color" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][color]"
-                                                   class="form-control form-control-color"
-                                                   value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.color', $option->color ?? '#3b82f6') }}"
-                                                   title="Elige un color para esta opción">
-                                        </div>
-                                    @endforeach
+                                    <div id="options-container-{{ $qIndex }}">
+                                        @foreach($question->options as $oIndex => $option)
+                                            <div class="input-group mb-2 option-row">
+                                                <span class="input-group-text bg-light">{{ $oIndex + 1 }}</span>
+                                                <input type="hidden" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][id]" value="{{ $option->id }}">
+                                                <input type="text" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][option_text]"
+                                                       value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.option_text', $option->option_text) }}"
+                                                       required placeholder="Texto de la opción" class="form-control">
+                                                <input type="color" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][color]"
+                                                       class="form-control form-control-color"
+                                                       value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.color', $option->color ?? '#3b82f6') }}"
+                                                       title="Elige un color para esta opción">
+                                                @if($option->votes->count() > 0)
+                                                    <span class="input-group-text bg-success text-white" title="Esta opción tiene {{ $option->votes->count() }} voto(s)">
+                                                        <i class="bi bi-lock-fill"></i> {{ $option->votes->count() }}
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-success mt-2" onclick="addNewOption({{ $qIndex }}, {{ $question->options->count() }})">
+                                        <i class="bi bi-plus-circle"></i> Agregar Nueva Opción
+                                    </button>
+                                    <small class="d-block text-muted mt-2">
+                                        <i class="bi bi-info-circle"></i> Las opciones con <i class="bi bi-lock-fill"></i> tienen votos y se mantienen intactas. Las nuevas opciones empiezan con 0 votos.
+                                    </small>
                                 </div>
                             </div>
                         </div>
                     @endforeach
 
-                    <div class="alert alert-warning" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                        <strong>Nota:</strong> Por el momento, solo puedes editar el texto de preguntas y opciones existentes.
-                        No puedes agregar o eliminar preguntas/opciones en una encuesta publicada.
+                    <div id="new-questions-container"></div>
+
+                    <button type="button" class="btn btn-primary mt-3" onclick="addNewQuestion()">
+                        <i class="bi bi-plus-circle-fill"></i> Agregar Nueva Pregunta
+                    </button>
+
+                    <div class="alert alert-info mt-3" role="alert">
+                        <i class="bi bi-info-circle-fill"></i>
+                        <strong>¡Ahora puedes agregar preguntas y opciones!</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>✅ Agrega nuevas preguntas a encuestas publicadas</li>
+                            <li>✅ Agrega nuevas opciones a preguntas existentes</li>
+                            <li>✅ Los resultados existentes NO se afectan</li>
+                            <li>✅ Las nuevas opciones empiezan con 0 votos</li>
+                            <li>🔒 Las opciones con votos están protegidas (icono de candado)</li>
+                        </ul>
                     </div>
                 </div>
 
@@ -159,4 +184,145 @@
         </div>
     </div>
 </div>
+
+<script>
+let questionCounter = {{ $survey->questions->count() }};
+let newQuestionIndex = {{ $survey->questions->count() }};
+
+// Función para agregar nueva opción a una pregunta existente
+function addNewOption(questionIndex, currentOptionCount) {
+    const container = document.getElementById(`options-container-${questionIndex}`);
+    const newOptionIndex = currentOptionCount;
+
+    const newOption = document.createElement('div');
+    newOption.className = 'input-group mb-2 option-row';
+    newOption.innerHTML = `
+        <span class="input-group-text bg-light">${newOptionIndex + 1}</span>
+        <input type="text" name="questions[${questionIndex}][options][${newOptionIndex}][option_text]"
+               required placeholder="Texto de la nueva opción" class="form-control">
+        <input type="color" name="questions[${questionIndex}][options][${newOptionIndex}][color]"
+               class="form-control form-control-color"
+               value="#3b82f6"
+               title="Elige un color para esta opción">
+        <button type="button" class="btn btn-danger" onclick="this.parentElement.remove(); renumberOptions(${questionIndex})">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+
+    container.appendChild(newOption);
+
+    // Actualizar el contador en el botón
+    const button = container.nextElementSibling;
+    button.setAttribute('onclick', `addNewOption(${questionIndex}, ${newOptionIndex + 1})`);
+
+    renumberOptions(questionIndex);
+}
+
+// Función para renumerar opciones
+function renumberOptions(questionIndex) {
+    const container = document.getElementById(`options-container-${questionIndex}`);
+    const options = container.querySelectorAll('.option-row');
+    options.forEach((option, index) => {
+        const numberSpan = option.querySelector('.input-group-text');
+        numberSpan.textContent = index + 1;
+    });
+}
+
+// Función para agregar nueva pregunta
+function addNewQuestion() {
+    const container = document.getElementById('new-questions-container');
+
+    const newQuestion = document.createElement('div');
+    newQuestion.className = 'card mb-3 border border-primary';
+    newQuestion.innerHTML = `
+        <div class="card-header bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0 fw-semibold">
+                <i class="bi bi-plus-circle-fill"></i> Nueva Pregunta ${questionCounter + 1}
+            </h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.card').remove()">
+                <i class="bi bi-trash"></i> Eliminar
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Texto de la Pregunta *</label>
+                <input type="text" name="questions[${newQuestionIndex}][question_text]"
+                       required class="form-control" placeholder="Escribe tu pregunta aquí">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Tipo de Pregunta *</label>
+                <select name="questions[${newQuestionIndex}][question_type]" required class="form-select">
+                    <option value="single_choice">Opción Única (radio)</option>
+                    <option value="multiple_choice">Opción Múltiple (checkbox)</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Opciones de Respuesta *</label>
+                <div id="new-options-container-${newQuestionIndex}">
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-light">1</span>
+                        <input type="text" name="questions[${newQuestionIndex}][options][0][option_text]"
+                               required placeholder="Primera opción" class="form-control">
+                        <input type="color" name="questions[${newQuestionIndex}][options][0][color]"
+                               class="form-control form-control-color" value="#3b82f6">
+                    </div>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text bg-light">2</span>
+                        <input type="text" name="questions[${newQuestionIndex}][options][1][option_text]"
+                               required placeholder="Segunda opción" class="form-control">
+                        <input type="color" name="questions[${newQuestionIndex}][options][1][color]"
+                               class="form-control form-control-color" value="#10b981">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-success mt-2" onclick="addOptionToNewQuestion(${newQuestionIndex}, 2)">
+                    <i class="bi bi-plus-circle"></i> Agregar Opción
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.appendChild(newQuestion);
+    questionCounter++;
+    newQuestionIndex++;
+}
+
+// Función para agregar opción a una nueva pregunta
+function addOptionToNewQuestion(questionIndex, optionCount) {
+    const container = document.getElementById(`new-options-container-${questionIndex}`);
+
+    const newOption = document.createElement('div');
+    newOption.className = 'input-group mb-2';
+    newOption.innerHTML = `
+        <span class="input-group-text bg-light">${optionCount + 1}</span>
+        <input type="text" name="questions[${questionIndex}][options][${optionCount}][option_text]"
+               required placeholder="Opción ${optionCount + 1}" class="form-control">
+        <input type="color" name="questions[${questionIndex}][options][${optionCount}][color]"
+               class="form-control form-control-color" value="#${Math.floor(Math.random()*16777215).toString(16)}">
+        <button type="button" class="btn btn-danger" onclick="this.parentElement.remove(); renumberNewOptions(${questionIndex})">
+            <i class="bi bi-trash"></i>
+        </button>
+    `;
+
+    container.appendChild(newOption);
+
+    // Actualizar el botón
+    const button = container.nextElementSibling;
+    button.setAttribute('onclick', `addOptionToNewQuestion(${questionIndex}, ${optionCount + 1})`);
+
+    renumberNewOptions(questionIndex);
+}
+
+// Renumerar opciones de nuevas preguntas
+function renumberNewOptions(questionIndex) {
+    const container = document.getElementById(`new-options-container-${questionIndex}`);
+    const options = container.querySelectorAll('.input-group');
+    options.forEach((option, index) => {
+        const numberSpan = option.querySelector('.input-group-text');
+        numberSpan.textContent = index + 1;
+    });
+}
+</script>
+
 @endsection
