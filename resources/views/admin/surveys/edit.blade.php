@@ -93,12 +93,25 @@
                     </h5>
 
                     @foreach($survey->questions as $qIndex => $question)
-                        <div class="card mb-3 border">
+                        @php
+                            $questionHasVotes = $question->votes()->count() > 0;
+                        @endphp
+                        <div class="card mb-3 border" id="question-card-{{ $qIndex }}">
                             <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0 fw-semibold">Pregunta {{ $qIndex + 1 }}</h6>
+                                <h6 class="mb-0 fw-semibold">
+                                    Pregunta {{ $qIndex + 1 }}
+                                    @if($questionHasVotes)
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="bi bi-exclamation-triangle-fill"></i> {{ $question->votes()->count() }} votos
+                                        </span>
+                                    @endif
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteExistingQuestion({{ $qIndex }}, '{{ addslashes($question->question_text) }}', {{ $question->id }}, {{ $questionHasVotes ? 'true' : 'false' }}, {{ $question->votes()->count() }})">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
                             </div>
                             <div class="card-body">
-                                <input type="hidden" name="questions[{{ $qIndex }}][id]" value="{{ $question->id }}">
+                                <input type="hidden" name="questions[{{ $qIndex }}][id]" value="{{ $question->id }}" class="question-id-{{ $qIndex }}">
 
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Texto de la Pregunta *</label>
@@ -123,9 +136,12 @@
                                     <label class="form-label fw-semibold">Opciones de Respuesta *</label>
                                     <div id="options-container-{{ $qIndex }}">
                                         @foreach($question->options as $oIndex => $option)
-                                            <div class="input-group mb-2 option-row">
+                                            @php
+                                                $optionHasVotes = $option->votes->count() > 0;
+                                            @endphp
+                                            <div class="input-group mb-2 option-row" id="option-row-{{ $qIndex }}-{{ $oIndex }}">
                                                 <span class="input-group-text bg-light">{{ $oIndex + 1 }}</span>
-                                                <input type="hidden" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][id]" value="{{ $option->id }}">
+                                                <input type="hidden" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][id]" value="{{ $option->id }}" class="option-id-{{ $qIndex }}-{{ $oIndex }}">
                                                 <input type="text" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][option_text]"
                                                        value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.option_text', $option->option_text) }}"
                                                        required placeholder="Texto de la opción" class="form-control">
@@ -133,11 +149,14 @@
                                                        class="form-control form-control-color"
                                                        value="{{ old('questions.'.$qIndex.'.options.'.$oIndex.'.color', $option->color ?? '#3b82f6') }}"
                                                        title="Elige un color para esta opción">
-                                                @if($option->votes->count() > 0)
-                                                    <span class="input-group-text bg-success text-white" title="Esta opción tiene {{ $option->votes->count() }} voto(s)">
-                                                        <i class="bi bi-lock-fill"></i> {{ $option->votes->count() }}
+                                                @if($optionHasVotes)
+                                                    <span class="input-group-text bg-warning text-dark" title="Esta opción tiene {{ $option->votes->count() }} voto(s)">
+                                                        <i class="bi bi-exclamation-triangle-fill"></i> {{ $option->votes->count() }}
                                                     </span>
                                                 @endif
+                                                <button type="button" class="btn btn-danger" onclick="deleteExistingOption({{ $qIndex }}, {{ $oIndex }}, '{{ addslashes($option->option_text) }}', {{ $option->id }}, {{ $optionHasVotes ? 'true' : 'false' }}, {{ $option->votes->count() }})">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </div>
                                         @endforeach
                                     </div>
@@ -160,13 +179,14 @@
 
                     <div class="alert alert-info mt-3" role="alert">
                         <i class="bi bi-info-circle-fill"></i>
-                        <strong>¡Ahora puedes agregar preguntas y opciones!</strong>
+                        <strong>¡Sistema de edición completamente flexible!</strong>
                         <ul class="mb-0 mt-2">
-                            <li>✅ Agrega nuevas preguntas a encuestas publicadas</li>
-                            <li>✅ Agrega nuevas opciones a preguntas existentes</li>
-                            <li>✅ Los resultados existentes NO se afectan</li>
-                            <li>✅ Las nuevas opciones empiezan con 0 votos</li>
-                            <li>🔒 Las opciones con votos están protegidas (icono de candado)</li>
+                            <li>✅ <strong>Agregar:</strong> Nuevas preguntas y opciones a encuestas publicadas</li>
+                            <li>✅ <strong>Editar:</strong> Texto y colores de preguntas/opciones existentes</li>
+                            <li>🗑️ <strong>Eliminar:</strong> CUALQUIER pregunta u opción (incluso con votos)</li>
+                            <li>⚠️ <strong>Con votos:</strong> Badge amarillo indica que tiene votos (se pueden eliminar igual)</li>
+                            <li>📊 <strong>Los votos se conservan:</strong> Al eliminar, los votos quedan en BD pero ocultos de resultados</li>
+                            <li>↩️ <strong>Reversible:</strong> Puedes restaurar antes de guardar (botón amarillo)</li>
                         </ul>
                     </div>
                 </div>
@@ -322,6 +342,182 @@ function renumberNewOptions(questionIndex) {
         const numberSpan = option.querySelector('.input-group-text');
         numberSpan.textContent = index + 1;
     });
+}
+
+// ===================================================================
+// FUNCIONES PARA ELIMINAR PREGUNTAS Y OPCIONES EXISTENTES
+// ===================================================================
+
+// Eliminar pregunta existente (con o sin votos)
+function deleteExistingQuestion(questionIndex, questionText, questionId, hasVotes, voteCount) {
+    let confirmMessage = '';
+
+    if (hasVotes) {
+        confirmMessage = `🔴 ¡ADVERTENCIA! Esta pregunta tiene ${voteCount} voto(s)\n\n` +
+                        `"${questionText}"\n\n` +
+                        `Si la eliminas:\n` +
+                        `• Los ${voteCount} votos se conservarán en la base de datos\n` +
+                        `• La pregunta NO aparecerá en los resultados\n` +
+                        `• Esta acción es REVERSIBLE antes de guardar\n\n` +
+                        `¿Deseas continuar?`;
+    } else {
+        confirmMessage = `⚠️ ¿Estás seguro de que deseas eliminar esta pregunta?\n\n"${questionText}"\n\nEsta acción es REVERSIBLE antes de guardar.`;
+    }
+
+    if (confirm(confirmMessage)) {
+        const card = document.getElementById(`question-card-${questionIndex}`);
+        if (card) {
+            // Remover visualmente
+            card.style.opacity = '0.5';
+            card.style.pointerEvents = 'none';
+
+            // Remover el ID del input hidden para que no se envíe en el formulario
+            // Esto hará que el controlador la elimine
+            const idInput = card.querySelector(`.question-id-${questionIndex}`);
+            if (idInput) {
+                idInput.remove();
+            }
+
+            // Marcar visualmente como eliminada
+            const header = card.querySelector('.card-header');
+            header.classList.add('bg-danger', 'text-white');
+            header.innerHTML = `
+                <h6 class="mb-0">
+                    <i class="bi bi-trash-fill"></i> Pregunta marcada para eliminar
+                </h6>
+                <button type="button" class="btn btn-sm btn-warning" onclick="restoreQuestion(${questionIndex}, '${questionText.replace(/'/g, "\\'")}')">
+                    <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                </button>
+            `;
+        }
+    }
+}
+
+// Restaurar pregunta marcada para eliminar
+function restoreQuestion(questionIndex, questionText) {
+    const card = document.getElementById(`question-card-${questionIndex}`);
+    if (card) {
+        card.style.opacity = '1';
+        card.style.pointerEvents = 'auto';
+
+        // Restaurar el header original
+        const header = card.querySelector('.card-header');
+        header.classList.remove('bg-danger', 'text-white');
+        header.classList.add('bg-light');
+        header.innerHTML = `
+            <h6 class="mb-0 fw-semibold">Pregunta ${questionIndex + 1}</h6>
+            <button type="button" class="btn btn-sm btn-danger" onclick="deleteExistingQuestion(${questionIndex}, '${questionText.replace(/'/g, "\\'")}', 0)">
+                <i class="bi bi-trash"></i> Eliminar Pregunta
+            </button>
+        `;
+
+        // Restaurar el input hidden del ID (necesitamos el ID original, lo añadimos de nuevo)
+        // Nota: Si la pregunta fue guardada, tiene ID. Lo obtenemos del data attribute
+        const cardBody = card.querySelector('.card-body');
+        const existingInput = cardBody.querySelector('input[type="hidden"][name*="[id]"]');
+        if (!existingInput) {
+            // Restaurar desde el atributo data o dejar sin ID si es nueva
+            const questionId = card.dataset.questionId || '';
+            if (questionId) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `questions[${questionIndex}][id]`;
+                input.value = questionId;
+                input.className = `question-id-${questionIndex}`;
+                cardBody.insertBefore(input, cardBody.firstChild);
+            }
+        }
+    }
+}
+
+// Eliminar opción existente (con o sin votos)
+function deleteExistingOption(questionIndex, optionIndex, optionText, optionId, hasVotes, voteCount) {
+    let confirmMessage = '';
+
+    if (hasVotes) {
+        confirmMessage = `🔴 ¡ADVERTENCIA! Esta opción tiene ${voteCount} voto(s)\n\n` +
+                        `"${optionText}"\n\n` +
+                        `Si la eliminas:\n` +
+                        `• Los ${voteCount} votos se conservarán en la base de datos\n` +
+                        `• La opción NO aparecerá en los resultados\n` +
+                        `• Esta acción es REVERSIBLE antes de guardar\n\n` +
+                        `¿Deseas continuar?`;
+    } else {
+        confirmMessage = `⚠️ ¿Estás seguro de que deseas eliminar esta opción?\n\n"${optionText}"\n\nEsta acción es REVERSIBLE antes de guardar.`;
+    }
+
+    if (confirm(confirmMessage)) {
+        const row = document.getElementById(`option-row-${questionIndex}-${optionIndex}`);
+        if (row) {
+            // Remover el ID del input hidden para que el controlador la elimine
+            const idInput = row.querySelector(`.option-id-${questionIndex}-${optionIndex}`);
+            if (idInput) {
+                idInput.remove();
+            }
+
+            // Remover visualmente
+            row.style.opacity = '0.3';
+            row.style.textDecoration = 'line-through';
+            row.style.pointerEvents = 'none';
+
+            // Cambiar el fondo para indicar que será eliminada
+            row.classList.add('bg-danger', 'bg-opacity-10');
+
+            // Deshabilitar inputs
+            const inputs = row.querySelectorAll('input');
+            inputs.forEach(input => input.disabled = true);
+
+            // Agregar botón de restaurar
+            const deleteBtn = row.querySelector('.btn-danger');
+            if (deleteBtn) {
+                deleteBtn.outerHTML = `
+                    <button type="button" class="btn btn-warning" onclick="restoreOption(${questionIndex}, ${optionIndex}, '${optionText.replace(/'/g, "\\'")}', ${optionId})">
+                        <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                    </button>
+                `;
+            }
+        }
+
+        renumberOptions(questionIndex);
+    }
+}
+
+// Restaurar opción marcada para eliminar
+function restoreOption(questionIndex, optionIndex, optionText, optionId) {
+    const row = document.getElementById(`option-row-${questionIndex}-${optionIndex}`);
+    if (row) {
+        row.style.opacity = '1';
+        row.style.textDecoration = 'none';
+        row.style.pointerEvents = 'auto';
+        row.classList.remove('bg-danger', 'bg-opacity-10');
+
+        // Restaurar el input del ID
+        const firstInput = row.querySelector('input');
+        if (firstInput && !row.querySelector(`.option-id-${questionIndex}-${optionIndex}`)) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `questions[${questionIndex}][options][${optionIndex}][id]`;
+            input.value = optionId;
+            input.className = `option-id-${questionIndex}-${optionIndex}`;
+            row.insertBefore(input, firstInput.nextSibling);
+        }
+
+        // Habilitar inputs
+        const inputs = row.querySelectorAll('input');
+        inputs.forEach(input => input.disabled = false);
+
+        // Restaurar botón de eliminar
+        const restoreBtn = row.querySelector('.btn-warning');
+        if (restoreBtn) {
+            restoreBtn.outerHTML = `
+                <button type="button" class="btn btn-danger" onclick="deleteExistingOption(${questionIndex}, ${optionIndex}, '${optionText.replace(/'/g, "\\'")}', ${optionId})">
+                    <i class="bi bi-trash"></i>
+                </button>
+            `;
+        }
+    }
+
+    renumberOptions(questionIndex);
 }
 </script>
 
