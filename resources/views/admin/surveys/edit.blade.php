@@ -90,15 +90,20 @@
                 <div class="mb-4">
                     <h5 class="mb-3 fw-semibold">
                         <i class="bi bi-question-circle"></i> Preguntas
+                        <small class="text-muted ms-2">
+                            <i class="bi bi-grip-vertical"></i> Arrastra para reordenar
+                        </small>
                     </h5>
 
+                    <div id="questions-sortable-container">
                     @foreach($survey->questions as $qIndex => $question)
                         @php
                             $questionHasVotes = $question->votes()->count() > 0;
                         @endphp
                         <div class="card mb-3 border" id="question-card-{{ $qIndex }}">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center draggable-handle" style="cursor: move;">
                                 <h6 class="mb-0 fw-semibold">
+                                    <i class="bi bi-grip-vertical text-muted me-2"></i>
                                     Pregunta {{ $qIndex + 1 }}
                                     @if($questionHasVotes)
                                         <span class="badge bg-warning text-dark ms-2">
@@ -139,7 +144,10 @@
                                             @php
                                                 $optionHasVotes = $option->votes->count() > 0;
                                             @endphp
-                                            <div class="input-group mb-2 option-row" id="option-row-{{ $qIndex }}-{{ $oIndex }}">
+                                            <div class="input-group mb-2 option-row" id="option-row-{{ $qIndex }}-{{ $oIndex }}" style="cursor: move;">
+                                                <span class="input-group-text bg-light draggable-option-handle">
+                                                    <i class="bi bi-grip-vertical"></i>
+                                                </span>
                                                 <span class="input-group-text bg-light">{{ $oIndex + 1 }}</span>
                                                 <input type="hidden" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][id]" value="{{ $option->id }}" class="option-id-{{ $qIndex }}-{{ $oIndex }}">
                                                 <input type="text" name="questions[{{ $qIndex }}][options][{{ $oIndex }}][option_text]"
@@ -170,6 +178,7 @@
                             </div>
                         </div>
                     @endforeach
+                    </div>
 
                     <div id="new-questions-container"></div>
 
@@ -187,6 +196,7 @@
                             <li>⚠️ <strong>Con votos:</strong> Badge amarillo indica que tiene votos (se pueden eliminar igual)</li>
                             <li>📊 <strong>Los votos se conservan:</strong> Al eliminar, los votos quedan en BD pero ocultos de resultados</li>
                             <li>↩️ <strong>Reversible:</strong> Puedes restaurar antes de guardar (botón amarillo)</li>
+                            <li>🔄 <strong>Reordenar:</strong> Arrastra preguntas y opciones para cambiar el orden</li>
                         </ul>
                     </div>
                 </div>
@@ -216,7 +226,11 @@ function addNewOption(questionIndex, currentOptionCount) {
 
     const newOption = document.createElement('div');
     newOption.className = 'input-group mb-2 option-row';
+    newOption.style.cursor = 'move';
     newOption.innerHTML = `
+        <span class="input-group-text bg-light draggable-option-handle">
+            <i class="bi bi-grip-vertical"></i>
+        </span>
         <span class="input-group-text bg-light">${newOptionIndex + 1}</span>
         <input type="text" name="questions[${questionIndex}][options][${newOptionIndex}][option_text]"
                required placeholder="Texto de la nueva opción" class="form-control">
@@ -243,23 +257,27 @@ function renumberOptions(questionIndex) {
     const container = document.getElementById(`options-container-${questionIndex}`);
     const options = container.querySelectorAll('.option-row');
     options.forEach((option, index) => {
-        const numberSpan = option.querySelector('.input-group-text');
-        numberSpan.textContent = index + 1;
+        // Buscar el segundo span (el que contiene el número, no el del icono)
+        const numberSpans = option.querySelectorAll('.input-group-text');
+        if (numberSpans.length > 1) {
+            numberSpans[1].textContent = index + 1;
+        }
     });
 }
 
 // Función para agregar nueva pregunta
 function addNewQuestion() {
-    const container = document.getElementById('new-questions-container');
+    const container = document.getElementById('questions-sortable-container');
 
     const newQuestion = document.createElement('div');
     newQuestion.className = 'card mb-3 border border-primary';
     newQuestion.innerHTML = `
-        <div class="card-header bg-primary bg-gradient text-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-primary bg-gradient text-white d-flex justify-content-between align-items-center draggable-handle" style="cursor: move;">
             <h6 class="mb-0 fw-semibold">
+                <i class="bi bi-grip-vertical me-2"></i>
                 <i class="bi bi-plus-circle-fill"></i> Nueva Pregunta ${questionCounter + 1}
             </h6>
-            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.card').remove()">
+            <button type="button" class="btn btn-sm btn-danger" onclick="this.closest('.card').remove(); updateQuestionIndices();">
                 <i class="bi bi-trash"></i> Eliminar
             </button>
         </div>
@@ -281,14 +299,20 @@ function addNewQuestion() {
             <div class="mb-3">
                 <label class="form-label fw-semibold">Opciones de Respuesta *</label>
                 <div id="new-options-container-${newQuestionIndex}">
-                    <div class="input-group mb-2">
+                    <div class="input-group mb-2" style="cursor: move;">
+                        <span class="input-group-text bg-light draggable-option-handle">
+                            <i class="bi bi-grip-vertical"></i>
+                        </span>
                         <span class="input-group-text bg-light">1</span>
                         <input type="text" name="questions[${newQuestionIndex}][options][0][option_text]"
                                required placeholder="Primera opción" class="form-control">
                         <input type="color" name="questions[${newQuestionIndex}][options][0][color]"
                                class="form-control form-control-color" value="#3b82f6">
                     </div>
-                    <div class="input-group mb-2">
+                    <div class="input-group mb-2" style="cursor: move;">
+                        <span class="input-group-text bg-light draggable-option-handle">
+                            <i class="bi bi-grip-vertical"></i>
+                        </span>
                         <span class="input-group-text bg-light">2</span>
                         <input type="text" name="questions[${newQuestionIndex}][options][1][option_text]"
                                required placeholder="Segunda opción" class="form-control">
@@ -305,6 +329,10 @@ function addNewQuestion() {
 
     container.appendChild(newQuestion);
     questionCounter++;
+
+    // Inicializar Sortable para las opciones de la nueva pregunta
+    initializeOptionsSortable(newQuestionIndex);
+
     newQuestionIndex++;
 }
 
@@ -314,7 +342,11 @@ function addOptionToNewQuestion(questionIndex, optionCount) {
 
     const newOption = document.createElement('div');
     newOption.className = 'input-group mb-2';
+    newOption.style.cursor = 'move';
     newOption.innerHTML = `
+        <span class="input-group-text bg-light draggable-option-handle">
+            <i class="bi bi-grip-vertical"></i>
+        </span>
         <span class="input-group-text bg-light">${optionCount + 1}</span>
         <input type="text" name="questions[${questionIndex}][options][${optionCount}][option_text]"
                required placeholder="Opción ${optionCount + 1}" class="form-control">
@@ -339,8 +371,11 @@ function renumberNewOptions(questionIndex) {
     const container = document.getElementById(`new-options-container-${questionIndex}`);
     const options = container.querySelectorAll('.input-group');
     options.forEach((option, index) => {
-        const numberSpan = option.querySelector('.input-group-text');
-        numberSpan.textContent = index + 1;
+        // Buscar el segundo span (el que contiene el número, no el del icono)
+        const numberSpans = option.querySelectorAll('.input-group-text');
+        if (numberSpans.length > 1) {
+            numberSpans[1].textContent = index + 1;
+        }
     });
 }
 
@@ -519,6 +554,136 @@ function restoreOption(questionIndex, optionIndex, optionText, optionId) {
 
     renumberOptions(questionIndex);
 }
+
+// ===================================================================
+// DRAG & DROP CON SORTABLEJS
+// ===================================================================
+
+// Inicializar Sortable cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSortable();
+});
+
+function initializeSortable() {
+    // Sortable para PREGUNTAS
+    const questionsContainer = document.getElementById('questions-sortable-container');
+    if (questionsContainer) {
+        new Sortable(questionsContainer, {
+            animation: 150,
+            handle: '.draggable-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                updateQuestionIndices();
+            }
+        });
+    }
+
+    // Sortable para OPCIONES de cada pregunta existente
+    @foreach($survey->questions as $qIndex => $question)
+        initializeOptionsSortable({{ $qIndex }});
+    @endforeach
+}
+
+function initializeOptionsSortable(questionIndex) {
+    const optionsContainer = document.getElementById(`options-container-${questionIndex}`);
+    if (optionsContainer) {
+        new Sortable(optionsContainer, {
+            animation: 150,
+            handle: '.draggable-option-handle',
+            ghostClass: 'sortable-ghost',
+            dragClass: 'sortable-drag',
+            onEnd: function(evt) {
+                renumberOptions(questionIndex);
+                updateOptionNames(questionIndex);
+            }
+        });
+    }
+}
+
+// Actualizar índices de preguntas después de reordenar
+function updateQuestionIndices() {
+    const questionCards = document.querySelectorAll('#questions-sortable-container > .card');
+    questionCards.forEach((card, newIndex) => {
+        // Actualizar el número visual
+        const header = card.querySelector('.card-header h6');
+        if (header) {
+            const currentText = header.innerHTML;
+            const newText = currentText.replace(/Pregunta \d+/, `Pregunta ${newIndex + 1}`);
+            header.innerHTML = newText;
+        }
+
+        // Actualizar los nombres de los inputs para mantener el orden correcto
+        const inputs = card.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            if (input.name) {
+                // Reemplazar el índice de la pregunta en el nombre
+                input.name = input.name.replace(/questions\[\d+\]/, `questions[${newIndex}]`);
+            }
+        });
+    });
+}
+
+// Actualizar nombres de inputs de opciones después de reordenar
+function updateOptionNames(questionIndex) {
+    const container = document.getElementById(`options-container-${questionIndex}`);
+    const options = container.querySelectorAll('.option-row');
+
+    options.forEach((option, newIndex) => {
+        // Actualizar todos los inputs de esta opción
+        const inputs = option.querySelectorAll('input');
+        inputs.forEach(input => {
+            if (input.name) {
+                // Actualizar el índice de la opción en el nombre
+                const regex = new RegExp(`questions\\[${questionIndex}\\]\\[options\\]\\[\\d+\\]`);
+                input.name = input.name.replace(regex, `questions[${questionIndex}][options][${newIndex}]`);
+            }
+
+            // Actualizar clases que contengan índices
+            if (input.className) {
+                input.className = input.className.replace(/option-id-\d+-\d+/, `option-id-${questionIndex}-${newIndex}`);
+            }
+        });
+
+        // Actualizar el ID del div
+        option.id = `option-row-${questionIndex}-${newIndex}`;
+    });
+}
 </script>
+
+<!-- SortableJS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<style>
+/* Estilos para el drag & drop */
+.sortable-ghost {
+    opacity: 0.4;
+    background: #f8f9fa;
+    border: 2px dashed #0d6efd;
+}
+
+.sortable-drag {
+    opacity: 1;
+    cursor: grabbing !important;
+}
+
+.draggable-handle:hover {
+    background-color: #e9ecef !important;
+    transition: background-color 0.2s;
+}
+
+.draggable-option-handle {
+    cursor: grab;
+}
+
+.draggable-option-handle:active {
+    cursor: grabbing;
+}
+
+.option-row:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.2s;
+}
+</style>
 
 @endsection

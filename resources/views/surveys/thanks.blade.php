@@ -96,18 +96,18 @@
                                     <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem;">
                                         {{ $index + 1 }}
                                     </span>
-                                    {{-- <div class="flex-grow-1">
+                                    <div class="flex-grow-1">
                                         <h5 class="fw-semibold text-dark mb-2">{{ $stat['question'] }}</h5>
                                         <small class="text-muted">
                                             <i class="bi bi-chat-left-text"></i> {{ $stat['total_responses'] }} respuestas
                                         </small>
-                                    </div> --}}
+                                    </div>
                                 </div>
 
                                 <div class="row">
                                     <!-- Gráfico de pastel - MÁS GRANDE EN WEB -->
                                     <div class="col-12 col-lg-6 mb-4 mb-lg-0">
-                                        <div class="chart-container-web p-4 bg-white rounded-3 shadow-sm" style="position: relative; min-height: 400px;">
+                                        <div class="chart-container-web p-4 bg-white rounded-3 shadow-sm" style="position: relative; min-height: 600px; max-height: 1400px; overflow-y: auto;">
                                             <canvas id="chart-{{ $index }}"></canvas>
                                         </div>
                                     </div>
@@ -387,15 +387,21 @@
 }
 
 .chart-container-web canvas {
-    max-width: 100%;
+    max-width: 100% !important;
+    width: 100% !important;
     height: auto !important;
+    min-height: 400px !important;
 }
 
 /* Responsive para tablets */
 @media (max-width: 992px) {
     .chart-container-web {
-        min-height: 350px !important;
+        min-height: 450px !important;
         padding: 1.5rem !important;
+    }
+
+    .chart-container-web canvas {
+        min-height: 350px !important;
     }
 }
 
@@ -508,11 +514,15 @@
 
     /* Gráfico móvil - MÁS GRANDE */
     .chart-container-web {
-        min-height: 320px !important;
+        min-height: 400px !important;
         margin-bottom: 2rem !important;
         padding: 1.5rem !important;
         background: rgba(255, 255, 255, 0.95);
         border-radius: 15px;
+    }
+
+    .chart-container-web canvas {
+        min-height: 320px !important;
     }
 
     /* En móvil, el gráfico ocupa el 100% del ancho */
@@ -770,6 +780,9 @@ document.addEventListener('DOMContentLoaded', function() {
             opt.color || defaultChartColors[idx % defaultChartColors.length]
         );
 
+        // Debug: Mostrar cuántas opciones hay
+        console.log(`Pregunta ${index + 1}: ${labels.length} opciones`, labels);
+
         // Detectar si es móvil o desktop
         const isMobile = window.innerWidth <= 768;
         const isSmallMobile = window.innerWidth <= 576;
@@ -796,8 +809,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 plugins: {
                     legend: {
+                        display: true,
                         position: 'bottom',
                         align: 'start', // Alinear a la izquierda
+                        maxHeight: 1000, // Permitir mucha más altura para la leyenda
+                        fullSize: true, // Ocupar todo el ancho disponible
                         labels: {
                             padding: isDesktop ? 20 : 12,
                             font: {
@@ -811,6 +827,10 @@ document.addEventListener('DOMContentLoaded', function() {
                             boxWidth: isDesktop ? 12 : 10,
                             boxHeight: isDesktop ? 12 : 10,
                             textAlign: 'left', // Texto alineado a la izquierda
+                            filter: function(item, chart) {
+                                // NO filtrar nada - mostrar TODAS las etiquetas
+                                return true;
+                            },
                             // Generar etiquetas personalizadas con solo porcentaje
                             generateLabels: function(chart) {
                                 const data = chart.data;
@@ -818,6 +838,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                     const dataset = data.datasets[0];
                                     const total = dataset.data.reduce((a, b) => a + b, 0);
 
+                                    // IMPORTANTE: Retornar TODAS las etiquetas sin límite
                                     return data.labels.map((label, i) => {
                                         const meta = chart.getDatasetMeta(0);
                                         const style = meta.controller.getStyle(i);
@@ -889,9 +910,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     delay: 400 + (index * 200),
                     easing: 'easeInOutQuart' // Easing más suave
                 },
-                // Efecto 3D sutil
-                cutout: isDesktop ? '50%' : '45%', // Agujero del donut
-                radius: isDesktop ? '85%' : '80%',
+                // Efecto 3D sutil - PASTEL MÁS GRANDE
+                cutout: isDesktop ? '45%' : '40%', // Agujero del donut más pequeño = pastel más grande
+                radius: isDesktop ? '95%' : '90%', // Radio más grande para ocupar más espacio
             }
         });
     });
