@@ -90,31 +90,30 @@
                             </h3>
 
                         @foreach($statistics as $index => $stat)
-                            <div class="question-block mb-5 pb-4 @if(!$loop->last) border-bottom @endif">
+                            <div class="question-block {{ $loop->last ? '' : 'mb-5 pb-5 border-bottom' }}">
                                 <!-- Pregunta -->
-                                <div class="d-flex align-items-start gap-3 mb-4">
-                                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                                <div class="d-flex align-items-start gap-3 mb-5">
+                                    <span class="badge bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; font-size: 1.2rem; flex-shrink: 0;">
                                         {{ $index + 1 }}
                                     </span>
                                     <div class="flex-grow-1">
-                                        <h5 class="fw-semibold text-dark mb-2">{{ $stat['question'] }}</h5>
-                                        <small class="text-muted">
-                                            <i class="bi bi-chat-left-text"></i> {{ $stat['total_responses'] }} respuestas
-                                        </small>
+                                        <h5 class="fw-bold text-dark mb-0">{{ $stat['question'] }}</h5>
                                     </div>
                                 </div>
 
-                                <div class="row">
-                                    <!-- Gráfico de pastel - MÁS GRANDE EN WEB -->
-                                    <div class="col-12 col-lg-6 mb-4 mb-lg-0">
-                                        <div class="chart-container-web p-4 bg-white rounded-3 shadow-sm" style="position: relative; min-height: 600px; max-height: 1400px; overflow-y: auto;">
+                                <!-- Gráfico de pastel - ARRIBA, ANCHO COMPLETO -->
+                                <div class="row mb-5">
+                                    <div class="col-12">
+                                        <div class="chart-container-web p-5 bg-white rounded-4 shadow-sm" style="position: relative; height: 600px;">
                                             <canvas id="chart-{{ $index }}"></canvas>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <!-- Opciones con barras de progreso -->
-                                    <div class="col-12 col-lg-6">
-                                        <div class="options-container">
+                                <!-- Opciones con barras de progreso - ABAJO EN 2 COLUMNAS -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="options-container row row-cols-1 row-cols-md-2 g-4">
                                     @foreach($stat['options'] as $optIndex => $option)
                                         @php
                                             // Usar color personalizado o fallback a colores por defecto
@@ -128,35 +127,37 @@
                                                 $gradientEnd = $optionColor;
                                             }
                                         @endphp
-                                        <div class="option-item mb-3 fade-in p-2 rounded"
-                                             style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 4px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
-                                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                                                <span class="fw-medium text-dark">
-                                                    <span class="d-inline-block rounded-circle me-2" style="width: 12px; height: 12px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; vertical-align: middle;"></span>
-                                                    {{ $option['text'] }}
-                                                </span>
-                                                <span class="fw-bold text-dark" style="min-width: 50px; text-align: right; font-size: 1.2rem;">
-                                                    <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
-                                                </span>
-                                            </div>
+                                        <div class="col">
+                                            <div class="option-item fade-in p-4 rounded-3 h-100 bg-white shadow-sm"
+                                                 style="animation-delay: {{ $optIndex * 0.1 }}s; border-left: 5px solid {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }};">
+                                                <div class="d-flex justify-content-between align-items-center mb-3 gap-3">
+                                                    <span class="fw-semibold text-dark d-flex align-items-center gap-2">
+                                                        <span class="d-inline-block rounded-circle" style="width: 14px; height: 14px; background-color: {{ $optionColor ?? $defaultColors[$optIndex % count($defaultColors)][0] }}; flex-shrink: 0;"></span>
+                                                        <span>{{ $option['text'] }}</span>
+                                                    </span>
+                                                    <span class="fw-bold text-primary" style="font-size: 1.5rem; flex-shrink: 0;">
+                                                        <span class="percentage-counter" data-target="{{ $option['percentage'] }}">0</span>%
+                                                    </span>
+                                                </div>
 
-                                            <!-- Barra de progreso animada con color personalizado -->
-                                            <div class="progress shadow-sm" style="height: 30px; border-radius: 15px; background: rgba(0,0,0,0.05);">
-                                                <div class="progress-bar progress-bar-animated progress-bar-striped position-relative overflow-visible"
-                                                     role="progressbar"
-                                                     style="width: 0%;
-                                                            background: linear-gradient(90deg, {{ $gradientStart }} 0%, {{ $gradientEnd }} 100%);
-                                                            border-radius: 15px;
-                                                            transition: width 1.5s ease-out {{ $optIndex * 0.2 }}s;"
-                                                     data-width="{{ $option['percentage'] }}"
-                                                     aria-valuenow="{{ $option['percentage'] }}"
-                                                     aria-valuemin="0"
-                                                     aria-valuemax="100">
+                                                <!-- Barra de progreso animada con color personalizado -->
+                                                <div class="progress shadow-sm" style="height: 30px; border-radius: 15px; background: rgba(0,0,0,0.05);">
+                                                    <div class="progress-bar progress-bar-animated progress-bar-striped position-relative overflow-visible"
+                                                         role="progressbar"
+                                                         style="width: 0%;
+                                                                background: linear-gradient(90deg, {{ $gradientStart }} 0%, {{ $gradientEnd }} 100%);
+                                                                border-radius: 15px;
+                                                                transition: width 1.5s ease-out {{ $optIndex * 0.2 }}s;"
+                                                         data-width="{{ $option['percentage'] }}"
+                                                         aria-valuenow="{{ $option['percentage'] }}"
+                                                         aria-valuemin="0"
+                                                         aria-valuemax="100">
 
-                                                    @if($option['percentage'] > 0)
-                                                        <!-- Efecto de brillo -->
-                                                        <span class="shine-effect"></span>
-                                                    @endif
+                                                        @if($option['percentage'] > 0)
+                                                            <!-- Efecto de brillo -->
+                                                            <span class="shine-effect"></span>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -337,16 +338,16 @@
     }
 }
 
-/* Hover effects */
+/* Hover effects para las opciones */
 .option-item {
     transition: all 0.3s ease;
-    padding: 10px;
-    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .option-item:hover {
-    background: rgba(13, 110, 253, 0.05);
-    transform: translateX(5px);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+    border-color: rgba(13, 110, 253, 0.2);
 }
 
 .progress {
@@ -373,12 +374,13 @@
     }
 }
 
-/* Estilos para el contenedor del gráfico - MEJORADO PARA WEB */
+/* Estilos para el contenedor del gráfico - ANCHO COMPLETO */
 .chart-container-web {
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
+    width: 100%;
 }
 
 .chart-container-web:hover {
@@ -389,19 +391,14 @@
 .chart-container-web canvas {
     max-width: 100% !important;
     width: 100% !important;
-    height: auto !important;
-    min-height: 400px !important;
+    height: 100% !important;
 }
 
 /* Responsive para tablets */
 @media (max-width: 992px) {
     .chart-container-web {
-        min-height: 450px !important;
+        height: 500px !important;
         padding: 1.5rem !important;
-    }
-
-    .chart-container-web canvas {
-        min-height: 350px !important;
     }
 }
 
@@ -409,11 +406,11 @@
 @media (max-width: 768px) {
     /* Ajustes generales */
     .min-vh-100 {
-        padding: 1rem 0 !important;
+        padding: 2rem 0 !important;
     }
 
     .container {
-        padding: 0 0.5rem !important;
+        padding: 0 1rem !important;
     }
 
     /* Tipografía móvil */
@@ -422,19 +419,19 @@
     }
 
     .lead {
-        font-size: 0.95rem !important;
-    }
-
-    h3 {
-        font-size: 1.25rem !important;
-    }
-
-    h5 {
         font-size: 1rem !important;
     }
 
-    h4 {
+    h3 {
+        font-size: 1.3rem !important;
+    }
+
+    h5 {
         font-size: 1.1rem !important;
+    }
+
+    h4 {
+        font-size: 1.2rem !important;
     }
 
     /* Ícono de éxito */
@@ -467,144 +464,124 @@
 
     /* Card principal */
     .card-body {
-        padding: 1.5rem 1rem !important;
+        padding: 2rem 1.5rem !important;
     }
 
     /* Banner móvil */
     .banner-wrapper {
-        min-height: 150px !important;
-        max-height: 250px !important;
+        min-height: 180px !important;
+        max-height: 300px !important;
     }
 
     .banner-img {
-        max-height: 250px !important;
+        max-height: 300px !important;
     }
 
     /* Sección de éxito */
     .text-center.mb-5.pb-4 {
-        margin-bottom: 2rem !important;
-        padding-bottom: 1.5rem !important;
+        margin-bottom: 3rem !important;
+        padding-bottom: 2rem !important;
     }
 
     /* Título de resultados */
     .results-section h3 {
-        margin-bottom: 1.5rem !important;
+        margin-bottom: 2rem !important;
     }
 
-    /* Pregunta móvil */
-    .question-block {
-        margin-bottom: 2rem !important;
-        padding-bottom: 1.5rem !important;
+    /* Pregunta móvil (excepto la última) */
+    .question-block:not(:last-child) {
+        margin-bottom: 3rem !important;
+        padding-bottom: 2rem !important;
+    }
+
+    /* Última pregunta sin espaciado extra */
+    .question-block:last-child {
+        margin-bottom: 0 !important;
+        padding-bottom: 0 !important;
     }
 
     .question-block .badge {
-        width: 32px !important;
-        height: 32px !important;
-        font-size: 0.9rem !important;
+        width: 40px !important;
+        height: 40px !important;
+        font-size: 1.1rem !important;
     }
 
     .question-block h5 {
-        font-size: 0.95rem !important;
-        line-height: 1.4 !important;
+        font-size: 1.1rem !important;
+        line-height: 1.5 !important;
     }
 
-    .question-block small {
-        font-size: 0.8rem !important;
-    }
-
-    /* Gráfico móvil - MÁS GRANDE */
+    /* Gráfico móvil - ANCHO COMPLETO */
     .chart-container-web {
-        min-height: 400px !important;
-        margin-bottom: 2rem !important;
-        padding: 1.5rem !important;
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 15px;
-    }
-
-    .chart-container-web canvas {
-        min-height: 320px !important;
-    }
-
-    /* En móvil, el gráfico ocupa el 100% del ancho */
-    .col-lg-6 {
-        order: 1;
-    }
-
-    .col-lg-6:last-child {
-        order: 2;
+        height: 500px !important;
+        margin-bottom: 3rem !important;
+        padding: 2rem 1.5rem !important;
+        background: rgba(255, 255, 255, 0.98);
+        border-radius: 20px;
     }
 
     /* Opciones móviles */
     .option-item {
-        margin-bottom: 1rem !important;
-        padding: 8px !important;
+        padding: 1.5rem !important;
+        margin-bottom: 0 !important;
     }
 
     .option-item .d-flex {
-        flex-wrap: wrap;
-        gap: 6px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
     }
 
-    .option-item .fw-medium {
-        font-size: 0.9rem !important;
-        flex: 1 1 100%;
-        margin-bottom: 4px;
+    .option-item .fw-semibold {
+        font-size: 1rem !important;
     }
 
     .option-item .fw-bold {
-        font-size: 1rem !important;
-        min-width: auto !important;
-        flex: 1 1 100%;
-        text-align: left !important;
-    }
-
-    /* Badges en móvil */
-    .option-item .badge {
-        font-size: 0.75rem !important;
-        padding: 0.35rem 0.6rem !important;
-    }
-
-    .option-item .d-flex.gap-2 {
-        flex-wrap: wrap !important;
-        gap: 0.5rem !important;
+        font-size: 1.75rem !important;
+        align-self: flex-end !important;
     }
 
     /* Barras de progreso móvil */
     .progress {
-        height: 22px !important;
-        border-radius: 11px !important;
+        height: 28px !important;
+        border-radius: 14px !important;
+    }
+
+    /* Gap entre columnas móvil */
+    .options-container.g-4 {
+        gap: 1rem !important;
     }
 
     /* Alert de privacidad */
     .alert {
-        padding: 1rem !important;
-        margin-top: 2rem !important;
+        padding: 1.5rem !important;
+        margin-top: 3rem !important;
     }
 
     .alert h6 {
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
     }
 
     .alert p {
-        font-size: 0.8rem !important;
+        font-size: 0.9rem !important;
     }
 
     .alert i.bi-shield-check-fill {
-        font-size: 1.2rem !important;
+        font-size: 1.5rem !important;
     }
 
     /* Footer */
     .card-footer {
-        padding: 0.75rem !important;
+        padding: 1rem !important;
     }
 
     .card-footer small {
-        font-size: 0.75rem !important;
+        font-size: 0.85rem !important;
     }
 
     /* Mensaje adicional */
     .text-center.mt-4 p {
-        font-size: 0.85rem !important;
+        font-size: 0.9rem !important;
     }
 }
 
@@ -612,38 +589,53 @@
 @media (max-width: 576px) {
     /* Ajustes extremos para pantallas muy pequeñas */
     .display-6 {
-        font-size: 1.3rem !important;
+        font-size: 1.4rem !important;
     }
 
     .card-body {
-        padding: 1rem 0.75rem !important;
+        padding: 1.5rem 1rem !important;
     }
 
-    .chart-container {
-        height: 280px !important;
+    .chart-container-web {
+        height: 450px !important;
+        padding: 1.5rem 1rem !important;
     }
 
     .question-block .d-flex {
-        gap: 0.5rem !important;
+        gap: 0.75rem !important;
     }
 
-    .option-item .fw-medium {
-        font-size: 0.85rem !important;
+    .question-block .badge {
+        width: 38px !important;
+        height: 38px !important;
+        font-size: 1rem !important;
+    }
+
+    .option-item {
+        padding: 1.25rem !important;
+    }
+
+    .option-item .fw-semibold {
+        font-size: 0.95rem !important;
+    }
+
+    .option-item .fw-bold {
+        font-size: 1.5rem !important;
     }
 
     .progress {
-        height: 20px !important;
-        border-radius: 10px !important;
+        height: 24px !important;
+        border-radius: 12px !important;
     }
 
     /* Banner extra pequeño */
     .banner-wrapper {
-        min-height: 120px !important;
-        max-height: 200px !important;
+        min-height: 150px !important;
+        max-height: 250px !important;
     }
 
     .banner-img {
-        max-height: 200px !important;
+        max-height: 250px !important;
     }
 }
 
@@ -803,19 +795,19 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: true,
+                maintainAspectRatio: false, // Cambiar a false para controlar altura manualmente
                 layout: {
-                    padding: isDesktop ? 20 : 10
+                    padding: isDesktop ? 30 : 15
                 },
                 plugins: {
                     legend: {
                         display: true,
                         position: 'bottom',
                         align: 'start', // Alinear a la izquierda
-                        maxHeight: 1000, // Permitir mucha más altura para la leyenda
+                        maxHeight: 400, // Altura máxima para la leyenda
                         fullSize: true, // Ocupar todo el ancho disponible
                         labels: {
-                            padding: isDesktop ? 20 : 12,
+                            padding: isDesktop ? 18 : 12,
                             font: {
                                 size: isDesktop ? 14 : (isMobile ? 13 : 12),
                                 family: "'Inter', system-ui, -apple-system, sans-serif",
@@ -910,9 +902,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     delay: 400 + (index * 200),
                     easing: 'easeInOutQuart' // Easing más suave
                 },
-                // Efecto 3D sutil - PASTEL MÁS GRANDE
-                cutout: isDesktop ? '45%' : '40%', // Agujero del donut más pequeño = pastel más grande
-                radius: isDesktop ? '95%' : '90%', // Radio más grande para ocupar más espacio
+                // Efecto 3D sutil - PASTEL MÁS GRANDE Y CENTRADO
+                cutout: isDesktop ? '40%' : '35%', // Agujero del donut más pequeño = pastel más grande
+                radius: '70%', // Radio optimizado para ancho completo
             }
         });
     });
